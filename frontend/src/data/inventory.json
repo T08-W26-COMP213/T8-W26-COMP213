@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "itemName": "Rice Bag",
+    "currentStock": 50,
+    "threshold": 20,
+    "riskLevel": "Low"
+  },
+  {
+    "id": 2,
+    "itemName": "Cooking Oil",
+    "currentStock": 18,
+    "threshold": 15,
+    "riskLevel": "Low"
+  },
+  {
+    "id": 3,
+    "itemName": "Tomato Sauce",
+    "currentStock": 10,
+    "threshold": 12,
+    "riskLevel": "Medium"
+  },
+  {
+    "id": 4,
+    "itemName": "Disposable Cups",
+    "currentStock": 5,
+    "threshold": 12,
+    "riskLevel": "High"
+  },
+  {
+    "id": 5,
+    "itemName": "Napkins",
+    "currentStock": 30,
+    "threshold": 10,
+    "riskLevel": "Low"
+  }
+]
