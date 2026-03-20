@@ -91,20 +91,20 @@ function App() {
     const usedQty = Number(quantityUsed);
 
     if (!selectedItemId) {
-      alert("Please select an item.");
-      showMessage("Please select an item.", "error");
+      alert("Please choose an item before submitting.");
+      showMessage("Please choose an item before submitting.", "error");
       return;
     }
 
     if (!usageDate || !String(usageDate).trim()) {
-      alert("Please select a usage date.");
-      showMessage("Please select a usage date.", "error");
+      alert("Please choose the date of use.");
+      showMessage("Please choose the date of use.", "error");
       return;
     }
 
     if (quantityUsed === "" || Number.isNaN(usedQty) || usedQty <= 0) {
-      alert("Please enter a valid usage quantity greater than 0.");
-      showMessage("Please enter a valid usage quantity greater than 0.", "error");
+      alert("Please enter a quantity greater than 0.");
+      showMessage("Please enter a quantity greater than 0.", "error");
       return;
     }
 
@@ -124,19 +124,22 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Failed to update inventory usage.");
-        showMessage(data.message || "Failed to update inventory usage.", "error");
+        alert(data.message || "Could not save this usage entry.");
+        showMessage(data.message || "Could not save this usage entry.", "error");
         return;
       }
 
-      showMessage(data.message || "Usage recorded successfully.", "success");
+      showMessage(
+        data.message || "Usage entry saved successfully.",
+        "success"
+      );
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
       await Promise.all([fetchInventory(), fetchUsageLogs()]);
     } catch (error) {
-      alert("Server error while updating usage.");
-      showMessage("Server error while updating usage.", "error");
+      alert("Something went wrong while saving the usage entry.");
+      showMessage("Something went wrong while saving the usage entry.", "error");
     }
   };
 
