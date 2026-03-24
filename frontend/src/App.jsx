@@ -130,7 +130,7 @@ function App() {
       }
 
       showMessage(
-        data.message || "Usage entry saved successfully.",
+        "Usage recorded successfully",
         "success"
       );
       setQuantityUsed("");
