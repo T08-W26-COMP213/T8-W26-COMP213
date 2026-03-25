@@ -216,6 +216,14 @@ function App() {
     return inventory.filter((item) => item.riskLevel === "High");
   }, [inventory]);
 
+  const itemsByRiskLevel = useMemo(() => {
+    return {
+      High: inventory.filter((item) => item.riskLevel === "High"),
+      Medium: inventory.filter((item) => item.riskLevel === "Medium"),
+      Low: inventory.filter((item) => item.riskLevel === "Low")
+    };
+  }, [inventory]);
+
   const totalItems = inventory.length;
 
   const totalUnitsRemaining = useMemo(() => {
@@ -262,6 +270,77 @@ function App() {
           <div className="stat-card">
             <p className="stat-title">High Risk Items</p>
             <h3>{highRiskItems.length}</h3>
+          </div>
+        </section>
+
+        <section className="content-grid">
+          <div className="panel glass-panel">
+            <div className="panel-header">
+              <h2>Items by Risk Category</h2>
+              <span className="panel-tag">Classification</span>
+            </div>
+
+            <div className="category-container">
+              {/* High Risk Items */}
+              <div className="risk-category">
+                <h3 className="category-title high-risk-title">🔴 High Risk Items ({itemsByRiskLevel.High.length})</h3>
+                {itemsByRiskLevel.High.length === 0 ? (
+                  <p className="empty-category">No high-risk items</p>
+                ) : (
+                  <div className="items-list">
+                    {itemsByRiskLevel.High.map((item) => (
+                      <div className="category-item high-risk-item" key={item._id}>
+                        <div className="item-info">
+                          <h4>{item.itemName}</h4>
+                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                        </div>
+                        <span className="category-label high-label">High</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Medium Risk Items */}
+              <div className="risk-category">
+                <h3 className="category-title medium-risk-title">🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})</h3>
+                {itemsByRiskLevel.Medium.length === 0 ? (
+                  <p className="empty-category">No medium-risk items</p>
+                ) : (
+                  <div className="items-list">
+                    {itemsByRiskLevel.Medium.map((item) => (
+                      <div className="category-item medium-risk-item" key={item._id}>
+                        <div className="item-info">
+                          <h4>{item.itemName}</h4>
+                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                        </div>
+                        <span className="category-label medium-label">Medium</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Low Risk Items */}
+              <div className="risk-category">
+                <h3 className="category-title low-risk-title">🟢 Low Risk Items ({itemsByRiskLevel.Low.length})</h3>
+                {itemsByRiskLevel.Low.length === 0 ? (
+                  <p className="empty-category">No low-risk items</p>
+                ) : (
+                  <div className="items-list">
+                    {itemsByRiskLevel.Low.map((item) => (
+                      <div className="category-item low-risk-item" key={item._id}>
+                        <div className="item-info">
+                          <h4>{item.itemName}</h4>
+                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                        </div>
+                        <span className="category-label low-label">Low</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
