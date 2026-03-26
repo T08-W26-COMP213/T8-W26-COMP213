@@ -518,31 +518,37 @@ function App() {
           <div className="table-wrapper">
             <table>
               <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Stock Level</th>
-                  <th>Risk Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.length === 0 ? (
-                  <tr>
-                    <td colSpan="3">No inventory items added yet.</td>
-                  </tr>
-                ) : (
-                  inventory.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.itemName}</td>
-                      <td>{item.currentStock}</td>
-                      <td>
-                        <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-                          {item.riskLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+  <tr>
+    <th>Item Name</th>
+    <th>Current Stock</th>
+    <th>Consumption Rate</th>
+    <th>Risk Level</th>
+  </tr>
+</thead>
+<tbody>
+  {inventory.length === 0 ? (
+    <tr>
+      <td colSpan="4">No inventory items added yet.</td>
+    </tr>
+  ) : (
+    inventory.map((item) => (
+      <tr key={item._id}>
+        <td>{item.itemName}</td>
+        <td>{item.currentStock}</td>
+        <td>
+          {item.consumptionRate && item.consumptionRate > 0
+            ? `${item.consumptionRate} units/day`
+            : "0 units/day"}
+        </td>
+        <td>
+          <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
+            {item.riskLevel}
+          </span>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
             </table>
           </div>
         </section>

@@ -11,6 +11,26 @@ function calculateRiskLevel(stock, threshold) {
   return "Low";
 }
 
+function calculateConsumptionRate(totalUsed, logs) {
+  if (!logs || logs.length === 0) {
+    return 0;
+  }
+
+  const sortedLogs = [...logs].sort(
+    (a, b) => new Date(a.usageDate) - new Date(b.usageDate)
+  );
+
+  const firstDate = new Date(sortedLogs[0].usageDate);
+  const lastDate = new Date(sortedLogs[sortedLogs.length - 1].usageDate);
+
+  const diffTime = lastDate - firstDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const days = diffDays <= 0 ? 1 : diffDays;
+
+  return Number((totalUsed / days).toFixed(2));
+}
+
 router.get("/", async (req, res) => {
   try {
     const items = await Inventory.find().sort({ createdAt: -1 });
@@ -52,6 +72,8 @@ router.post("/", async (req, res) => {
       itemName: itemName.trim(),
       currentStock: stock,
       reorderThreshold: threshold,
+      totalUsed: 0,
+      consumptionRate: 0,
       riskLevel: calculateRiskLevel(stock, threshold)
     });
 
@@ -130,7 +152,7 @@ router.post("/usage", async (req, res) => {
     item.totalUsed += quantityUsed;
     item.riskLevel = calculateRiskLevel(item.currentStock, item.reorderThreshold);
 
-    const updatedItem = await item.save();
+    let updatedItem = await item.save();
 
     const newUsageLog = new UsageLog({
       itemId: updatedItem._id,
@@ -142,6 +164,15 @@ router.post("/usage", async (req, res) => {
     });
 
     const savedLog = await newUsageLog.save();
+
+    const itemLogs = await UsageLog.find({ itemId: updatedItem._id });
+
+    updatedItem.consumptionRate = calculateConsumptionRate(
+      updatedItem.totalUsed,
+      itemLogs
+    );
+
+    updatedItem = await updatedItem.save();
 
     res.json({
       message: "Inventory usage logged successfully",

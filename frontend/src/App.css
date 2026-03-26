@@ -479,4 +479,16 @@ tbody tr:hover {
   .alert-item {
     flex-direction: column;
   }
+
+  .usage-form input,
+.usage-form select {
+  color: #14213d !important;
+  background: #ffffff !important;
+  -webkit-text-fill-color: #14213d;
+}
+
+.usage-form input::placeholder {
+  color: #7a7a7a;
+  opacity: 1;
+}
 }
