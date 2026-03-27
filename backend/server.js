@@ -10,7 +10,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:5173", "https://your-netlify-url.netlify.app"],
+  origin: [
+    "http://localhost:5173",
+    "https://fanciful-dusk-c3a5b0.netlify.app",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
