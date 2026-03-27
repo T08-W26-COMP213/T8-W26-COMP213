@@ -11,6 +11,16 @@ function calculateRiskLevel(stock, threshold) {
   return "Low";
 }
 
+function calculateConsumptionRate(totalUsed, createdAt) {
+  const createdDate = new Date(createdAt);
+  const today = new Date();
+
+  const diffTime = today - createdDate;
+  const diffDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+
+  return Number((totalUsed / diffDays).toFixed(2));
+}
+
 router.get("/", async (req, res) => {
   try {
     const items = await Inventory.find().sort({ createdAt: -1 });
@@ -52,6 +62,8 @@ router.post("/", async (req, res) => {
       itemName: itemName.trim(),
       currentStock: stock,
       reorderThreshold: threshold,
+      totalUsed: 0,
+      consumptionRate: 0,
       riskLevel: calculateRiskLevel(stock, threshold)
     });
 
@@ -127,7 +139,8 @@ router.post("/usage", async (req, res) => {
     }
 
     item.currentStock -= quantityUsed;
-    item.totalUsed += quantityUsed;
+    item.totalUsed = (item.totalUsed || 0) + quantityUsed;
+    item.consumptionRate = calculateConsumptionRate(item.totalUsed, item.createdAt);
     item.riskLevel = calculateRiskLevel(item.currentStock, item.reorderThreshold);
 
     const updatedItem = await item.save();

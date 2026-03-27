@@ -21,6 +21,10 @@ const inventorySchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  consumptionRate: {
+  type: Number,
+  default: 0
+  },
   riskLevel: {
     type: String,
     enum: ["Low", "Medium", "High"],
