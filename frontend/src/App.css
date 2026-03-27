@@ -183,14 +183,31 @@ body {
   padding: 14px 16px;
   font-size: 1rem;
   background: #fbfdff;
+  color: #14213d;
+  caret-color: #14213d;
+  -webkit-text-fill-color: #14213d;
   outline: none;
   transition: 0.2s ease;
 }
 
-.usage-form input:focus,
-.usage-form select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+.usage-form input::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+input[type="date"] {
+  position: relative;
+  padding-right: 10px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.4);
+}
+
+.usage-form select option {
+  color: #14213d;
+  background: #ffffff;
 }
 
 .usage-form button {
@@ -379,6 +396,7 @@ body {
 
 .table-panel {
   overflow: hidden;
+  margin-bottom: 24px;
 }
 
 .table-wrapper {

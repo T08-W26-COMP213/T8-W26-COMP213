@@ -475,6 +475,12 @@ function App() {
                       </p>
                       <p>
                         Reorder Threshold: <strong>{item.reorderThreshold}</strong>
+                     </p>
+                      <p>
+                        Status:{" "}
+                        <strong>
+                          {item.currentStock <= item.reorderThreshold ? "Alert Triggered" : "Normal"}
+                        </strong>
                       </p>
                     </div>
                     <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
@@ -517,32 +523,39 @@ function App() {
 
           <div className="table-wrapper">
             <table>
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Stock Level</th>
-                  <th>Risk Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.length === 0 ? (
-                  <tr>
-                    <td colSpan="3">No inventory items added yet.</td>
-                  </tr>
-                ) : (
-                  inventory.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.itemName}</td>
-                      <td>{item.currentStock}</td>
-                      <td>
-                        <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-                          {item.riskLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+            <thead>
+  <tr>
+    <th>Item Name</th>
+    <th>Current Stock</th>
+    <th>Consumption Rate</th>
+    <th>Risk Level</th>
+  </tr>
+</thead>
+
+<tbody>
+  {inventory.length === 0 ? (
+    <tr>
+      <td colSpan="4">No inventory items added yet.</td>
+    </tr>
+  ) : (
+    inventory.map((item) => (
+      <tr key={item._id}>
+        <td>{item.itemName}</td>
+        <td>{item.currentStock}</td>
+
+        {/* Consumption Rate column */}
+        <td>{item.consumptionRate ? `${item.consumptionRate} / day` : "0 / day"}</td>
+
+        {/* Risk Level column */}
+        <td>
+          <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
+            {item.riskLevel}
+          </span>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
             </table>
           </div>
         </section>
