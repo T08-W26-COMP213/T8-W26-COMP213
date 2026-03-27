@@ -16,10 +16,13 @@ function App() {
   const [newThreshold, setNewThreshold] = useState("");
   const [backendConnected, setBackendConnected] = useState(false);
 
-  const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+ const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const API_URL = `${API_BASE_URL}/inventory`;
+const API_URL= `${API_BASE_URL}/api/inventory`;
+console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+console.log("API_BASE_URL =", API_BASE_URL);
+console.log("API_URL =", API_URL);
 
   const showMessage = (text, type = "error") => {
     setMessage(text);
@@ -73,7 +76,7 @@ const API_URL = `${API_BASE_URL}/inventory`;
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/health");
+        const res = await fetch(`${API_BASE_URL}/api/health`);
         setBackendConnected(res.ok);
       } catch (error) {
         setBackendConnected(false);
