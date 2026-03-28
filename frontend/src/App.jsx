@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import InventoryRiskLayout from "./InventoryRiskLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -278,6 +279,11 @@ console.log("API_URL =", API_URL);
             <h3>{highRiskItems.length}</h3>
           </div>
         </section>
+
+        <InventoryRiskLayout
+        inventory={inventory}
+        loading={loading}
+        backendConnected={backendConnected}/>
 
         <section className="content-grid">
           <div className="panel glass-panel">
