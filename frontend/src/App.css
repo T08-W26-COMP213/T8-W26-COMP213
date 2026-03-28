@@ -647,3 +647,63 @@ tbody tr:hover {
   outline: none;
   font-size: 14px;
 }
+
+.critical-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  margin-right: 6px;
+}
+
+/* Fix layout for risk items (icon + name + stock) */
+
+.risk-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.risk-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.risk-item-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.risk-stock {
+  font-size: 0.92rem;
+  opacity: 0.8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.critical-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.high-risk-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.high-risk-item-title .critical-icon {
+  flex-shrink: 0;
+}
+
+.risk-category div {
+  text-align: left;
+}

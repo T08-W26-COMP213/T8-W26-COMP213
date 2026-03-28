@@ -312,7 +312,10 @@ function App() {
                     {itemsByRiskLevel.High.map((item) => (
                       <div className="category-item high-risk-item" key={item._id}>
                         <div className="item-info">
-                          <h4>{item.itemName}</h4>
+                  <h4 className="high-risk-item-title">
+  <span className="critical-icon">⚠️</span>
+  <span>{item.itemName}</span>
+</h4>
                           <p>
                             Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
                             <strong>{item.reorderThreshold}</strong> | Used:{" "}

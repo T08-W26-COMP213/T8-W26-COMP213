@@ -16,9 +16,12 @@ function InventoryRiskLayout({ inventory = [], loading = false, backendConnected
       <div className="risk-item-list">
         {items.map((item) => (
           <div key={item._id} className="risk-item">
-            <span>{item.itemName}</span>
-            <span className="risk-stock">Stock: {item.currentStock}</span>
-          </div>
+  <div className="risk-item-left">
+    {item.riskLevel === "High" && <span className="critical-icon">⚠️</span>}
+    <span className="risk-item-name">{item.itemName}</span>
+  </div>
+  <span className="risk-stock">Stock: {item.currentStock}</span>
+</div>
         ))}
       </div>
     );
