@@ -10,21 +10,37 @@ function calculateRiskLevel(stock, threshold) {
 }
 
 const rawInventory = [
-  { itemName: "Surgical Masks", currentStock: 120, reorderThreshold: 50 },   // Low
-  { itemName: "Latex Gloves", currentStock: 40, reorderThreshold: 50 },      // Medium
-  { itemName: "Sanitizer Bottles", currentStock: 15, reorderThreshold: 40 }, // High
-  { itemName: "IV Bags", currentStock: 8, reorderThreshold: 25 },            // High
-  { itemName: "Thermometers", currentStock: 30, reorderThreshold: 30 },      // Medium
-  { itemName: "Bandages", currentStock: 80, reorderThreshold: 25 },          // Low
-  { itemName: "Face Shields", currentStock: 12, reorderThreshold: 20 },      // Medium
-  { itemName: "Hand Soap", currentStock: 5, reorderThreshold: 15 },          // High
-  { itemName: "Cotton Rolls", currentStock: 60, reorderThreshold: 20 }       // Low
+  // 🟢 LOW RISK (8 items)
+  { itemName: "Surgical Masks", currentStock: 120, reorderThreshold: 50 },
+  { itemName: "Bandages", currentStock: 80, reorderThreshold: 25 },
+  { itemName: "Cotton Rolls", currentStock: 60, reorderThreshold: 20 },
+  { itemName: "Antibiotic Kits", currentStock: 75, reorderThreshold: 50 },
+  { itemName: "Face Towels", currentStock: 90, reorderThreshold: 30 },
+  { itemName: "Glucose Test Strips", currentStock: 150, reorderThreshold: 60 },
+  { itemName: "Medical Tape", currentStock: 95, reorderThreshold: 35 },
+  { itemName: "Sterile Gauze Pads", currentStock: 110, reorderThreshold: 45 },
+
+  // 🟡 MEDIUM RISK (5 items)
+  { itemName: "Latex Gloves", currentStock: 40, reorderThreshold: 50 },
+  { itemName: "Thermometers", currentStock: 30, reorderThreshold: 30 },
+  { itemName: "Face Shields", currentStock: 12, reorderThreshold: 20 },
+  { itemName: "Glucose Drips", currentStock: 22, reorderThreshold: 40 },
+  { itemName: "Saline Solution", currentStock: 18, reorderThreshold: 30 },
+
+  // 🔴 HIGH RISK (3 items)
+  { itemName: "Sanitizer Bottles", currentStock: 15, reorderThreshold: 40 },
+  { itemName: "IV Bags", currentStock: 8, reorderThreshold: 25 },
+  { itemName: "Emergency Kits", currentStock: 3, reorderThreshold: 15 }
 ];
 
 const mockInventory = rawInventory.map((item) => ({
   ...item,
-  totalUsed: 0,
-  consumptionRate: 0,
+
+  // 🔹 Random usage data
+  totalUsed: Math.floor(Math.random() * 100),       // 0–99
+  consumptionRate: Math.floor(Math.random() * 10),  // 0–9
+
+  // 🔹 Risk calculation
   riskLevel: calculateRiskLevel(item.currentStock, item.reorderThreshold)
 }));
 
