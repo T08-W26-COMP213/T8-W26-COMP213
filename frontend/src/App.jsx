@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
+import InventoryDashboardLayout from "./InventoryDashboardLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -263,7 +264,10 @@ function App() {
           </div>
         </section>
 
-        <InventoryRiskLayout
+        <InventoryRiskLayout/>
+
+        <InventoryDashboardLayout
+        
         inventory={inventory}
         loading={loading}
         backendConnected={backendConnected}/>
