@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
+import ConfirmationBanner from "./ConfirmationBanner";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -11,18 +12,20 @@ function App() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [newItemName, setNewItemName] = useState("");
   const [newStock, setNewStock] = useState("");
   const [newThreshold, setNewThreshold] = useState("");
   const [backendConnected, setBackendConnected] = useState(false);
 
+  // Confirmation banner state (User Story 4)
+  const [bannerMessage, setBannerMessage] = useState("");
+  const [bannerType, setBannerType] = useState("success");
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const API_URL = `${API_BASE_URL}/api/inventory`;
 
-  console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-  console.log("API_BASE_URL =", API_BASE_URL);
-  console.log("API_URL =", API_URL);
 
   const showMessage = (text, type = "error") => {
     setMessage(text);
@@ -102,6 +105,30 @@ function App() {
     initializeApp();
   }, []);
 
+
+  /**
+   * Refresh dashboard data (User Story 3).
+   * Re-fetches inventory items and usage logs from the backend,
+   * then updates the dashboard summary cards, tables, and charts.
+   */
+  const handleRefreshDashboard = useCallback(async () => {
+    setRefreshing(true);
+    clearMessage();
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/health`);
+      setBackendConnected(res.ok);
+    } catch (error) {
+      setBackendConnected(false);
+    }
+
+    await Promise.all([fetchInventory(), fetchUsageLogs()]);
+    setRefreshing(false);
+
+    setBannerMessage("Dashboard refreshed successfully");
+    setBannerType("success");
+  }, [API_BASE_URL]);
+
   const handleUsageSubmit = async (e) => {
     e.preventDefault();
     clearMessage();
@@ -148,6 +175,8 @@ function App() {
       }
 
       showMessage("Usage recorded successfully", "success");
+      setBannerMessage("Usage recorded successfully");
+      setBannerType("success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
@@ -212,6 +241,8 @@ function App() {
       }
 
       showMessage(data.message || "Inventory item added successfully.", "success");
+      setBannerMessage(data.message || "Inventory item added successfully.");
+      setBannerType("success");
       setNewItemName("");
       setNewStock("");
       setNewThreshold("");
@@ -245,6 +276,19 @@ function App() {
     return inventory.reduce((sum, item) => sum + item.currentStock, 0);
   }, [inventory]);
 
+
+  /** Average consumption rate across all items (User Story 3) */
+  const averageConsumptionRate = useMemo(() => {
+    if (inventory.length === 0) return 0;
+    const totalRate = inventory.reduce((sum, item) => sum + (item.consumptionRate || 0), 0);
+    return (totalRate / inventory.length).toFixed(2);
+  }, [inventory]);
+
+  /** Timestamp of the last dashboard refresh (User Story 3) */
+  const lastRefreshed = useMemo(() => {
+    return new Date().toLocaleTimeString();
+  }, [inventory, usageLogs]);
+
   return (
     <div className="app-shell">
       <nav className="topbar">
@@ -253,6 +297,15 @@ function App() {
           <p className="brand-subtitle">Inventory Risk Monitoring Dashboard</p>
         </div>
       </nav>
+
+
+      {/* User Story 4: Confirmation Banner */}
+      <ConfirmationBanner
+        message={bannerMessage}
+        type={bannerType}
+        onClose={() => setBannerMessage("")}
+        duration={4000}
+      />
 
       <main className="dashboard-container">
         <section className="hero-panel">
@@ -564,13 +617,14 @@ function App() {
                   <th>Current Stock</th>
                   <th>Reorder Threshold</th>
                   <th>Total Used</th>
+                  <th>Consumption Rate</th>
                   <th>Risk Level</th>
                 </tr>
               </thead>
               <tbody>
                 {inventory.length === 0 ? (
                   <tr>
-                    <td colSpan="5">No inventory items found.</td>
+                    <td colSpan="6">No inventory items found.</td>
                   </tr>
                 ) : (
                   inventory.map((item) => (
@@ -579,6 +633,7 @@ function App() {
                       <td>{item.currentStock}</td>
                       <td>{item.reorderThreshold}</td>
                       <td>{item.totalUsed}</td>
+                      <td>{item.consumptionRate || 0} units/day</td>
                       <td>
                         <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
                           {getRiskDisplayName(item.riskLevel)}
@@ -605,13 +660,14 @@ function App() {
                   <th>Item Name</th>
                   <th>Quantity Used</th>
                   <th>Usage Date</th>
+                  <th>Remaining Stock</th>
                   <th>Updated Risk Level</th>
                 </tr>
               </thead>
               <tbody>
                 {usageLogs.length === 0 ? (
                   <tr>
-                    <td colSpan="4">No usage logs found.</td>
+                    <td colSpan="5">No usage logs found.</td>
                   </tr>
                 ) : (
                   usageLogs.map((log) => (
@@ -619,6 +675,7 @@ function App() {
                       <td>{log.itemName}</td>
                       <td>{log.quantityUsed}</td>
                       <td>{new Date(log.usageDate).toLocaleDateString()}</td>
+                      <td>{log.remainingStock}</td>
                       <td>
                         <span className={`risk-badge ${getRiskDisplayClass(log.riskLevel)}`}>
                           {getRiskDisplayName(log.riskLevel)}
