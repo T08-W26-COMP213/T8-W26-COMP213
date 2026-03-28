@@ -16,13 +16,12 @@ function App() {
   const [newThreshold, setNewThreshold] = useState("");
   const [backendConnected, setBackendConnected] = useState(false);
 
- const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = `${API_BASE_URL}/api/inventory`;
 
-const API_URL= `${API_BASE_URL}/api/inventory`;
-console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-console.log("API_BASE_URL =", API_BASE_URL);
-console.log("API_URL =", API_URL);
+  console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+  console.log("API_BASE_URL =", API_BASE_URL);
+  console.log("API_URL =", API_URL);
 
   const showMessage = (text, type = "error") => {
     setMessage(text);
@@ -32,6 +31,18 @@ console.log("API_URL =", API_URL);
   const clearMessage = () => {
     setMessage("");
     setMessageType("");
+  };
+
+  const getRiskDisplayName = (riskLevel) => {
+    if (riskLevel === "High") return "Critical";
+    if (riskLevel === "Medium") return "At Risk";
+    return "Safe";
+  };
+
+  const getRiskDisplayClass = (riskLevel) => {
+    if (riskLevel === "High") return "high";
+    if (riskLevel === "Medium") return "medium";
+    return "low";
   };
 
   const fetchInventory = async () => {
@@ -135,10 +146,7 @@ console.log("API_URL =", API_URL);
         return;
       }
 
-      showMessage(
-        "Usage recorded successfully",
-        "success"
-      );
+      showMessage("Usage recorded successfully", "success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
@@ -287,18 +295,23 @@ console.log("API_URL =", API_URL);
             </div>
 
             <div className="category-container">
-              {/* High Risk Items */}
               <div className="risk-category">
-                <h3 className="category-title high-risk-title">🔴 High Risk Items ({itemsByRiskLevel.High.length})</h3>
+                <h3 className="category-title high-risk-title">
+                  🔴 High Risk Items ({itemsByRiskLevel.High.length})
+                </h3>
                 {itemsByRiskLevel.High.length === 0 ? (
-                  <p className="empty-category">No high-risk items</p>
+                  <p className="empty-category">No high risk items</p>
                 ) : (
                   <div className="items-list">
                     {itemsByRiskLevel.High.map((item) => (
                       <div className="category-item high-risk-item" key={item._id}>
                         <div className="item-info">
                           <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                          <p>
+                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                            <strong>{item.totalUsed}</strong>
+                          </p>
                         </div>
                         <span className="category-label high-label">High</span>
                       </div>
@@ -307,18 +320,23 @@ console.log("API_URL =", API_URL);
                 )}
               </div>
 
-              {/* Medium Risk Items */}
               <div className="risk-category">
-                <h3 className="category-title medium-risk-title">🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})</h3>
+                <h3 className="category-title medium-risk-title">
+                  🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})
+                </h3>
                 {itemsByRiskLevel.Medium.length === 0 ? (
-                  <p className="empty-category">No medium-risk items</p>
+                  <p className="empty-category">No medium risk items</p>
                 ) : (
                   <div className="items-list">
                     {itemsByRiskLevel.Medium.map((item) => (
                       <div className="category-item medium-risk-item" key={item._id}>
                         <div className="item-info">
                           <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                          <p>
+                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                            <strong>{item.totalUsed}</strong>
+                          </p>
                         </div>
                         <span className="category-label medium-label">Medium</span>
                       </div>
@@ -327,18 +345,23 @@ console.log("API_URL =", API_URL);
                 )}
               </div>
 
-              {/* Low Risk Items */}
               <div className="risk-category">
-                <h3 className="category-title low-risk-title">🟢 Low Risk Items ({itemsByRiskLevel.Low.length})</h3>
+                <h3 className="category-title low-risk-title">
+                  🟢 Low Risk Items ({itemsByRiskLevel.Low.length})
+                </h3>
                 {itemsByRiskLevel.Low.length === 0 ? (
-                  <p className="empty-category">No low-risk items</p>
+                  <p className="empty-category">No low risk items</p>
                 ) : (
                   <div className="items-list">
                     {itemsByRiskLevel.Low.map((item) => (
                       <div className="category-item low-risk-item" key={item._id}>
                         <div className="item-info">
                           <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
+                          <p>
+                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                            <strong>{item.totalUsed}</strong>
+                          </p>
                         </div>
                         <span className="category-label low-label">Low</span>
                       </div>
@@ -450,11 +473,7 @@ console.log("API_URL =", API_URL);
               <button type="submit">Submit Usage</button>
             </form>
 
-            {message && (
-              <div className={`status-message ${messageType}`}>
-                {message}
-              </div>
-            )}
+            {message && <div className={`status-message ${messageType}`}>{message}</div>}
           </div>
         </section>
 
@@ -481,7 +500,7 @@ console.log("API_URL =", API_URL);
                       </p>
                       <p>
                         Reorder Threshold: <strong>{item.reorderThreshold}</strong>
-                     </p>
+                      </p>
                       <p>
                         Status:{" "}
                         <strong>
@@ -489,8 +508,8 @@ console.log("API_URL =", API_URL);
                         </strong>
                       </p>
                     </div>
-                    <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-                      {item.riskLevel}
+                    <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
+                      {getRiskDisplayName(item.riskLevel)}
                     </span>
                   </div>
                 ))}
@@ -524,44 +543,41 @@ console.log("API_URL =", API_URL);
         <section className="table-panel">
           <div className="panel-header">
             <h2>Inventory Overview</h2>
-            <span className="panel-tag">System Summary</span>
+            <span className="panel-tag">Real-Time Snapshot</span>
           </div>
 
           <div className="table-wrapper">
             <table>
-            <thead>
-  <tr>
-    <th>Item Name</th>
-    <th>Current Stock</th>
-    <th>Consumption Rate</th>
-    <th>Risk Level</th>
-  </tr>
-</thead>
-
-<tbody>
-  {inventory.length === 0 ? (
-    <tr>
-      <td colSpan="4">No inventory items added yet.</td>
-    </tr>
-  ) : (
-    inventory.map((item) => (
-      <tr key={item._id}>
-        <td>{item.itemName}</td>
-        <td>{item.currentStock}</td>
-
-        {/* Consumption Rate column */}
-        <td>{item.consumptionRate ? `${item.consumptionRate} / day` : "0 / day"}</td>
-
-        {/* Risk Level column */}
-        <td>
-          <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-            {item.riskLevel}
-          </span>
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Current Stock</th>
+                  <th>Reorder Threshold</th>
+                  <th>Total Used</th>
+                  <th>Risk Level</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.length === 0 ? (
+                  <tr>
+                    <td colSpan="5">No inventory items found.</td>
+                  </tr>
+                ) : (
+                  inventory.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.itemName}</td>
+                      <td>{item.currentStock}</td>
+                      <td>{item.reorderThreshold}</td>
+                      <td>{item.totalUsed}</td>
+                      <td>
+                        <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
+                          {getRiskDisplayName(item.riskLevel)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
             </table>
           </div>
         </section>
@@ -569,7 +585,7 @@ console.log("API_URL =", API_URL);
         <section className="table-panel">
           <div className="panel-header">
             <h2>Inventory Usage Log</h2>
-            <span className="panel-tag">Submission History</span>
+            <span className="panel-tag">Recent Activity</span>
           </div>
 
           <div className="table-wrapper">
@@ -578,26 +594,24 @@ console.log("API_URL =", API_URL);
                 <tr>
                   <th>Item Name</th>
                   <th>Quantity Used</th>
-                  <th>Date</th>
-                  <th>Remaining Stock</th>
-                  <th>Risk Level</th>
+                  <th>Usage Date</th>
+                  <th>Updated Risk Level</th>
                 </tr>
               </thead>
               <tbody>
                 {usageLogs.length === 0 ? (
                   <tr>
-                    <td colSpan="5">No usage records submitted yet.</td>
+                    <td colSpan="4">No usage logs found.</td>
                   </tr>
                 ) : (
                   usageLogs.map((log) => (
                     <tr key={log._id}>
                       <td>{log.itemName}</td>
                       <td>{log.quantityUsed}</td>
-                      <td>{log.usageDate || "N/A"}</td>
-                      <td>{log.remainingStock}</td>
+                      <td>{new Date(log.usageDate).toLocaleDateString()}</td>
                       <td>
-                        <span className={`risk-badge ${log.riskLevel.toLowerCase()}`}>
-                          {log.riskLevel}
+                        <span className={`risk-badge ${getRiskDisplayClass(log.riskLevel)}`}>
+                          {getRiskDisplayName(log.riskLevel)}
                         </span>
                       </td>
                     </tr>
