@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 
 function InventoryRiskLayout({ inventory = [], loading = false, backendConnected = false }) {
-  const safeItems = inventory.filter((item) => item.riskLevel === "Safe");
+  const [filterOption, setFilterOption] = useState("all");
+
+  const safeItems = inventory.filter((item) => item.riskLevel === "Low");
   const atRiskItems = inventory.filter((item) => item.riskLevel === "Medium");
   const criticalItems = inventory.filter((item) => item.riskLevel === "High");
 
@@ -29,6 +31,23 @@ function InventoryRiskLayout({ inventory = [], loading = false, backendConnected
         <span className="panel-tag warning-tag">Operational Staff</span>
       </div>
 
+      {backendConnected && !loading && inventory.length > 0 && (
+        <div className="risk-filter-bar">
+          <label htmlFor="riskFilter">Filter View:</label>
+          <select
+            id="riskFilter"
+            value={filterOption}
+            onChange={(e) => setFilterOption(e.target.value)}
+            className="risk-filter-select"
+          >
+            <option value="all">All Items</option>
+            <option value="safe">Safe Only</option>
+            <option value="atRisk">At Risk Only</option>
+            <option value="critical">Critical Only</option>
+          </select>
+        </div>
+      )}
+
       {!backendConnected ? (
         <div className="risk-empty-state">
           <h3>Backend not connected</h3>
@@ -46,29 +65,35 @@ function InventoryRiskLayout({ inventory = [], loading = false, backendConnected
         </div>
       ) : (
         <div className="risk-grid">
-          <div className="risk-status-card safe-section">
-            <div className="risk-status-header">
-              <h3>Safe</h3>
-              <span className="risk-count">{safeItems.length}</span>
+          {(filterOption === "all" || filterOption === "safe") && (
+            <div className="risk-status-card safe-section">
+              <div className="risk-status-header">
+                <h3>Safe</h3>
+                <span className="risk-count">{safeItems.length}</span>
+              </div>
+              {renderItems(safeItems, "No safe items right now.")}
             </div>
-            {renderItems(safeItems, "No safe items right now.")}
-          </div>
+          )}
 
-          <div className="risk-status-card at-risk-section">
-            <div className="risk-status-header">
-              <h3>At Risk</h3>
-              <span className="risk-count">{atRiskItems.length}</span>
+          {(filterOption === "all" || filterOption === "atRisk") && (
+            <div className="risk-status-card at-risk-section">
+              <div className="risk-status-header">
+                <h3>At Risk</h3>
+                <span className="risk-count">{atRiskItems.length}</span>
+              </div>
+              {renderItems(atRiskItems, "No at-risk items right now.")}
             </div>
-            {renderItems(atRiskItems, "No at-risk items right now.")}
-          </div>
+          )}
 
-          <div className="risk-status-card critical-section">
-            <div className="risk-status-header">
-              <h3>Critical</h3>
-              <span className="risk-count">{criticalItems.length}</span>
+          {(filterOption === "all" || filterOption === "critical") && (
+            <div className="risk-status-card critical-section">
+              <div className="risk-status-header">
+                <h3>Critical</h3>
+                <span className="risk-count">{criticalItems.length}</span>
+              </div>
+              {renderItems(criticalItems, "No critical items right now.")}
             </div>
-            {renderItems(criticalItems, "No critical items right now.")}
-          </div>
+          )}
         </div>
       )}
     </section>

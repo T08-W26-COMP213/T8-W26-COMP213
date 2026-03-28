@@ -293,12 +293,12 @@ function App() {
         loading={loading}
         backendConnected={backendConnected}/>
 
-        <section className="content-grid">
-          <div className="panel glass-panel">
+        <section className="panel glass-panel classification-panel">
             <div className="panel-header">
               <h2>Items by Risk Category</h2>
               <span className="panel-tag">Classification</span>
             </div>
+            
 
             <div className="category-container">
               <div className="risk-category">
@@ -376,8 +376,9 @@ function App() {
                 )}
               </div>
             </div>
-          </div>
+          
         </section>
+        
 
         <section className="content-grid">
           <div className="panel glass-panel">
