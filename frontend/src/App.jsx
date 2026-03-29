@@ -256,15 +256,17 @@ function App() {
 
       <main className="dashboard-container">
         <section className="hero-panel">
-          <div>
-            <p className="hero-label">Smart Inventory Control</p>
-            <h2>Monitor stock usage, detect risk, and prevent shortages.</h2>
-            <p className="hero-text">
-              Track consumption in real time and identify inventory items that need attention
-              before they become critical.
-            </p>
-          </div>
-        </section>
+  <div className="hero-content">
+    <p className="hero-label">Smart Inventory Control</p>
+
+    <h2>Monitor stock usage & prevent shortages</h2>
+
+    <p className="hero-text">
+      Real-time tracking of inventory consumption and risk levels to ensure
+      operational efficiency and avoid critical shortages.
+    </p>
+  </div>
+</section>
 
         <section className="stats-grid">
           <div className="stat-card">
