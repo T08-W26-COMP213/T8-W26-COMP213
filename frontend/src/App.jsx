@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
+import InventoryDashboardLayout from "./InventoryDashboardLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);

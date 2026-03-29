@@ -146,15 +146,17 @@ router.post("/usage", async (req, res) => {
     const updatedItem = await item.save();
 
     const newUsageLog = new UsageLog({
-      itemId: updatedItem._id,
-      itemName: updatedItem.itemName,
-      quantityUsed,
-      usageDate,
-      remainingStock: updatedItem.currentStock,
-      riskLevel: updatedItem.riskLevel
-    });
+  itemId: updatedItem._id,
+  itemName: updatedItem.itemName,
+  quantityUsed: quantityUsed,
+  usageDate: new Date(usageDate), // fixed date format
+  remainingStock: updatedItem.currentStock,
+  riskLevel: updatedItem.riskLevel,
+  createdAt: new Date() // added timestamp
+});
 
     const savedLog = await newUsageLog.save();
+    console.log("Usage log created successfully:", savedLog);
 
     res.json({
       message: "Inventory usage logged successfully",
