@@ -294,7 +294,7 @@ function App() {
         <InventoryRiskLayout/>
 
         <InventoryDashboardLayout
-        
+
         inventory={inventory}
         loading={loading}
         backendConnected={backendConnected}/>
@@ -400,49 +400,55 @@ function App() {
               <label>
                 Item Name
                 <input
-                  type="text"
-                  value={newItemName}
-                  onChange={(e) => {
-                    setNewItemName(e.target.value);
-                    if (messageType === "error") {
-                      clearMessage();
-                    }
-                  }}
-                  onBlur={() => {
-                    if (!newItemName.trim()) {
-                      alert("Please enter an item name.");
-                      showMessage("Please enter an item name.", "error");
-                    }
-                  }}
-                  placeholder="Enter item name"
+                type="text"
+                value={newItemName}
+                onChange={(e) => {
+                  setNewItemName(e.target.value);
+                  if (messageType === "error") {
+                    clearMessage();
+                  }
+                }}
+                onBlur={() => {
+                  if (!newItemName.trim()) {
+                    alert("Please enter an item name.");
+                    showMessage("Please enter an item name.", "error");
+                  }
+                }}
+                placeholder="Enter item name"
                 />
-              </label>
-
-              <label>
-                Current Stock
-                <input
+                </label>
+                
+                <label>
+                  Current Stock
+                  <input
                   type="number"
                   min="0"
                   value={newStock}
                   onChange={(e) => setNewStock(e.target.value)}
                   placeholder="Enter current stock"
-                />
-              </label>
-
-              <label>
-                Reorder Threshold
-                <input
-                  type="number"
-                  min="1"
-                  value={newThreshold}
-                  onChange={(e) => setNewThreshold(e.target.value)}
-                  placeholder="Enter reorder threshold"
-                />
-              </label>
-
-              <button type="submit">Add Item</button>
-            </form>
-          </div>
+                  />
+                  </label>
+                  
+                  <label>
+                    Reorder Threshold
+                    <input
+                    type="number"
+                    min="1"
+                    value={newThreshold}
+                    onChange={(e) => setNewThreshold(e.target.value)}
+                    placeholder="Enter reorder threshold"
+                  />
+                </label>
+                
+                <button type="submit">Add Item</button>
+                </form>
+                
+                {message && (
+                  <div className={`status-message ${messageType}`}>
+                    {message}
+                    </div>
+                  )}
+                  </div>
 
           <div className="panel glass-panel">
             <div className="panel-header">
@@ -490,6 +496,8 @@ function App() {
             </form>
 
             {message && <div className={`status-message ${messageType}`}>{message}</div>}
+
+            (feat: add success message styling and dashboard layout)
           </div>
         </section>
 
