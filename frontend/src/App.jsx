@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
+import ConfirmationBanner from "./ConfirmationBanner";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -272,11 +273,7 @@ function App() {
           </div>
         </section>
 
-        {message && (
-          <div className={`status-message ${messageType}`}>
-            {message}
-          </div>
-        )}
+       <ConfirmationBanner message={message} type={messageType} />
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -448,11 +445,7 @@ function App() {
               <button type="submit">Add Item</button>
             </form>
 
-            {message && (
-              <div className={`status-message ${messageType}`}>
-                {message}
-              </div>
-            )}
+           <ConfirmationBanner message={message} type={messageType} />
           </div>
 
           <div className="panel glass-panel">
