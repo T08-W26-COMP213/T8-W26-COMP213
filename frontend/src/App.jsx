@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
-import InventoryDashboardLayout from "./InventoryDashboardLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -20,10 +19,6 @@ function App() {
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const API_URL = `${API_BASE_URL}/api/inventory`;
-
-  console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-  console.log("API_BASE_URL =", API_BASE_URL);
-  console.log("API_URL =", API_URL);
 
   const showMessage = (text, type = "error") => {
     setMessage(text);
@@ -103,6 +98,16 @@ function App() {
     initializeApp();
   }, []);
 
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = setTimeout(() => {
+      clearMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [message]);
+
   const handleUsageSubmit = async (e) => {
     e.preventDefault();
     clearMessage();
@@ -143,12 +148,12 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Could not save this usage entry.");
-        showMessage(data.message || "Could not save this usage entry.", "error");
+        alert(data.message || "Failed to update inventory usage.");
+        showMessage(data.message || "Failed to update inventory usage.", "error");
         return;
       }
 
-      showMessage("Usage recorded successfully", "success");
+      showMessage(data.message || "Usage recorded successfully.", "success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
@@ -257,17 +262,21 @@ function App() {
 
       <main className="dashboard-container">
         <section className="hero-panel">
-  <div className="hero-content">
-    <p className="hero-label">Smart Inventory Control</p>
+          <div>
+            <p className="hero-label">Smart Inventory Control</p>
+            <h2>Monitor stock usage, detect risk, and prevent shortages.</h2>
+            <p className="hero-text">
+              Track consumption in real time and identify inventory items that need attention
+              before they become critical.
+            </p>
+          </div>
+        </section>
 
-    <h2>Monitor stock usage & prevent shortages</h2>
-
-    <p className="hero-text">
-      Real-time tracking of inventory consumption and risk levels to ensure
-      operational efficiency and avoid critical shortages.
-    </p>
-  </div>
-</section>
+        {message && (
+          <div className={`status-message ${messageType}`}>
+            {message}
+          </div>
+        )}
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -292,101 +301,98 @@ function App() {
         </section>
 
         <InventoryRiskLayout
-  inventory={inventory}
-  loading={loading}
-  backendConnected={backendConnected}
-  fetchInventory={fetchInventory}
-/>
+          inventory={inventory}
+          loading={loading}
+          backendConnected={backendConnected}
+          fetchInventory={fetchInventory}
+        />
 
         <section className="panel glass-panel classification-panel">
-            <div className="panel-header">
-              <h2>Items by Risk Category</h2>
-              <span className="panel-tag">Classification</span>
+          <div className="panel-header">
+            <h2>Items by Risk Category</h2>
+            <span className="panel-tag">Classification</span>
+          </div>
+
+          <div className="category-container">
+            <div className="risk-category">
+              <h3 className="category-title high-risk-title">
+                🔴 High Risk Items ({itemsByRiskLevel.High.length})
+              </h3>
+              {itemsByRiskLevel.High.length === 0 ? (
+                <p className="empty-category">No high risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.High.map((item) => (
+                    <div className="category-item high-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4 className="high-risk-item-title">
+                          <span className="critical-icon">⚠️</span>
+                          <span>{item.itemName}</span>
+                        </h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
+                      </div>
+                      <span className="category-label high-label">High</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            
 
-            <div className="category-container">
-              <div className="risk-category">
-                <h3 className="category-title high-risk-title">
-                  🔴 High Risk Items ({itemsByRiskLevel.High.length})
-                </h3>
-                {itemsByRiskLevel.High.length === 0 ? (
-                  <p className="empty-category">No high risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.High.map((item) => (
-                      <div className="category-item high-risk-item" key={item._id}>
-                        <div className="item-info">
-                  <h4 className="high-risk-item-title">
-  <span className="critical-icon">⚠️</span>
-  <span>{item.itemName}</span>
-</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label high-label">High</span>
+            <div className="risk-category">
+              <h3 className="category-title medium-risk-title">
+                🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})
+              </h3>
+              {itemsByRiskLevel.Medium.length === 0 ? (
+                <p className="empty-category">No medium risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.Medium.map((item) => (
+                    <div className="category-item medium-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4>{item.itemName}</h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="risk-category">
-                <h3 className="category-title medium-risk-title">
-                  🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})
-                </h3>
-                {itemsByRiskLevel.Medium.length === 0 ? (
-                  <p className="empty-category">No medium risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Medium.map((item) => (
-                      <div className="category-item medium-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label medium-label">Medium</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="risk-category">
-                <h3 className="category-title low-risk-title">
-                  🟢 Low Risk Items ({itemsByRiskLevel.Low.length})
-                </h3>
-                {itemsByRiskLevel.Low.length === 0 ? (
-                  <p className="empty-category">No low risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Low.map((item) => (
-                      <div className="category-item low-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label low-label">Low</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span className="category-label medium-label">Medium</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          
+
+            <div className="risk-category">
+              <h3 className="category-title low-risk-title">
+                🟢 Low Risk Items ({itemsByRiskLevel.Low.length})
+              </h3>
+              {itemsByRiskLevel.Low.length === 0 ? (
+                <p className="empty-category">No low risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.Low.map((item) => (
+                    <div className="category-item low-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4>{item.itemName}</h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
+                      </div>
+                      <span className="category-label low-label">Low</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </section>
-        
 
         <section className="content-grid">
           <div className="panel glass-panel">
@@ -441,6 +447,12 @@ function App() {
 
               <button type="submit">Add Item</button>
             </form>
+
+            {message && (
+              <div className={`status-message ${messageType}`}>
+                {message}
+              </div>
+            )}
           </div>
 
           <div className="panel glass-panel">

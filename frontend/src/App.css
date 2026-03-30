@@ -315,6 +315,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-radius: 14px;
   padding: 14px 16px;
   font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .status-message.success {
