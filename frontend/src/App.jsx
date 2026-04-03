@@ -1,3 +1,4 @@
+import AddUserForm from "./AddUserForm.jsx";
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
@@ -362,12 +363,13 @@ function App() {
           </div>
         </section>
 
-        <InventoryRiskLayout
-          inventory={inventory}
-          loading={loading}
-          backendConnected={backendConnected}
-          fetchInventory={fetchInventory}
-        />
+        <InventoryRiskLayout/>
+<AddUserForm /> 
+        <InventoryDashboardLayout
+        
+        inventory={inventory}
+        loading={loading}
+        backendConnected={backendConnected}/>
 
         <section className="panel glass-panel classification-panel">
           <div className="panel-header">
