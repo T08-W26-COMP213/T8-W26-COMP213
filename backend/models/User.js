@@ -16,12 +16,15 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "manager", "staff"],
-      default: "staff"
+      required: true,
+      enum: ["System Administrator", "Operational Staff", "Business Owner"],
+      default: "Operational Staff"
     },
-    isActive: {
-      type: Boolean,
-      default: true
+    status: {
+      type: String,
+      required: true,
+      enum: ["Active", "Inactive"],
+      default: "Active"
     }
   },
   {

@@ -45,7 +45,7 @@ router.get("/:id", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { username, email, role, isActive } = req.body;
+    const { username, email, role, status } = req.body;
 
     if (!username || !username.trim()) {
       return res.status(400).json({
@@ -73,7 +73,7 @@ router.post("/", async (req, res) => {
       username: username.trim(),
       email: email.trim().toLowerCase(),
       role,
-      isActive
+      status
     });
 
     const savedUser = await newUser.save();
@@ -93,7 +93,7 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, isActive } = req.body;
+    const { username, email, role, status } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -145,8 +145,8 @@ router.put("/:id", async (req, res) => {
       user.role = role;
     }
 
-    if (isActive !== undefined) {
-      user.isActive = isActive;
+    if (status !== undefined) {
+      user.status = status;
     }
 
     const updatedUser = await user.save();

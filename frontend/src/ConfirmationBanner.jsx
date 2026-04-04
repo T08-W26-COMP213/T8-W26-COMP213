@@ -1,8 +1,10 @@
+import React from "react";
+
 function ConfirmationBanner({ message, type }) {
   if (!message) return null;
 
   return (
-    <div className={`status-message ${type}`}>
+    <div className={`confirmation-banner ${type}`}>
       {message}
     </div>
   );
