@@ -1,6 +1,8 @@
+import AddUserForm from "./AddUserForm.jsx";
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
+import ConfirmationBanner from "./ConfirmationBanner";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 
@@ -10,8 +12,16 @@ function App() {
   const [quantityUsed, setQuantityUsed] = useState("");
   const [usageDate, setUsageDate] = useState(new Date().toISOString().split("T")[0]);
   const [usageLogs, setUsageLogs] = useState([]);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+
+  const [globalMessage, setGlobalMessage] = useState("");
+  const [globalMessageType, setGlobalMessageType] = useState("");
+
+  const [addItemMessage, setAddItemMessage] = useState("");
+  const [addItemMessageType, setAddItemMessageType] = useState("");
+
+  const [usageMessage, setUsageMessage] = useState("");
+  const [usageMessageType, setUsageMessageType] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   const [newItemName, setNewItemName] = useState("");
@@ -22,18 +32,34 @@ function App() {
   const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const API_URL = `${API_BASE_URL}/api/inventory`;
 
-  console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
-  console.log("API_BASE_URL =", API_BASE_URL);
-  console.log("API_URL =", API_URL);
-
-  const showMessage = (text, type = "error") => {
-    setMessage(text);
-    setMessageType(type);
+  const showGlobalMessage = (text, type = "error") => {
+    setGlobalMessage(text);
+    setGlobalMessageType(type);
   };
 
-  const clearMessage = () => {
-    setMessage("");
-    setMessageType("");
+  const clearGlobalMessage = () => {
+    setGlobalMessage("");
+    setGlobalMessageType("");
+  };
+
+  const showAddItemMessage = (text, type = "error") => {
+    setAddItemMessage(text);
+    setAddItemMessageType(type);
+  };
+
+  const clearAddItemMessage = () => {
+    setAddItemMessage("");
+    setAddItemMessageType("");
+  };
+
+  const showUsageMessage = (text, type = "error") => {
+    setUsageMessage(text);
+    setUsageMessageType(type);
+  };
+
+  const clearUsageMessage = () => {
+    setUsageMessage("");
+    setUsageMessageType("");
   };
 
   const getRiskDisplayName = (riskLevel) => {
@@ -46,6 +72,23 @@ function App() {
     if (riskLevel === "High") return "high";
     if (riskLevel === "Medium") return "medium";
     return "low";
+  };
+
+  const formatUsageDate = (value) => {
+    if (!value) return "";
+
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split("-");
+      return `${year}/${Number(month)}/${Number(day)}`;
+    }
+
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return String(value);
+    }
+
+    return `${parsed.getFullYear()}/${parsed.getMonth() + 1}/${parsed.getDate()}`;
   };
 
   const fetchInventory = async () => {
@@ -68,7 +111,7 @@ function App() {
         setSelectedItemId("");
       }
     } catch (error) {
-      showMessage("Failed to load inventory data.", "error");
+      showGlobalMessage("Failed to load inventory data.", "error");
     }
   };
 
@@ -83,7 +126,7 @@ function App() {
 
       setUsageLogs(data);
     } catch (error) {
-      showMessage("Failed to load usage logs.", "error");
+      showGlobalMessage("Failed to load usage logs.", "error");
     }
   };
 
@@ -104,27 +147,57 @@ function App() {
     initializeApp();
   }, []);
 
+  useEffect(() => {
+    if (!globalMessage) return;
+
+    const timer = setTimeout(() => {
+      clearGlobalMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [globalMessage]);
+
+  useEffect(() => {
+    if (!addItemMessage) return;
+
+    const timer = setTimeout(() => {
+      clearAddItemMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [addItemMessage]);
+
+  useEffect(() => {
+    if (!usageMessage) return;
+
+    const timer = setTimeout(() => {
+      clearUsageMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [usageMessage]);
+
   const handleUsageSubmit = async (e) => {
     e.preventDefault();
-    clearMessage();
+    clearUsageMessage();
 
     const usedQty = Number(quantityUsed);
 
     if (!selectedItemId) {
       alert("Please choose an item before submitting.");
-      showMessage("Please choose an item before submitting.", "error");
+      showUsageMessage("Please choose an item before submitting.", "error");
       return;
     }
 
     if (!usageDate || !String(usageDate).trim()) {
       alert("Please choose the date of use.");
-      showMessage("Please choose the date of use.", "error");
+      showUsageMessage("Please choose the date of use.", "error");
       return;
     }
 
     if (quantityUsed === "" || Number.isNaN(usedQty) || usedQty <= 0) {
       alert("Please enter a quantity greater than 0.");
-      showMessage("Please enter a quantity greater than 0.", "error");
+      showUsageMessage("Please enter a quantity greater than 0.", "error");
       return;
     }
 
@@ -144,25 +217,25 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Could not save this usage entry.");
-        showMessage(data.message || "Could not save this usage entry.", "error");
+        alert(data.message || "Failed to update inventory usage.");
+        showUsageMessage(data.message || "Failed to update inventory usage.", "error");
         return;
       }
 
-      showMessage("Usage recorded successfully", "success");
+      showUsageMessage(data.message || "Usage recorded successfully.", "success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
       await Promise.all([fetchInventory(), fetchUsageLogs()]);
     } catch (error) {
       alert("Something went wrong while saving the usage entry.");
-      showMessage("Something went wrong while saving the usage entry.", "error");
+      showUsageMessage("Something went wrong while saving the usage entry.", "error");
     }
   };
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    clearMessage();
+    clearAddItemMessage();
 
     const trimmedItemName = newItemName.trim();
     const stockValue = Number(newStock);
@@ -170,25 +243,25 @@ function App() {
 
     if (newItemName === "" || trimmedItemName === "") {
       alert("Please enter an item name.");
-      showMessage("Please enter an item name.", "error");
+      showAddItemMessage("Please enter an item name.", "error");
       return;
     }
 
     if (trimmedItemName.length < 2) {
       alert("Item name must be at least 2 characters long.");
-      showMessage("Item name must be at least 2 characters long.", "error");
+      showAddItemMessage("Item name must be at least 2 characters long.", "error");
       return;
     }
 
     if (newStock === "" || Number.isNaN(stockValue) || stockValue < 0) {
       alert("Current stock must be a valid number greater than or equal to 0.");
-      showMessage("Current stock must be a valid number greater than or equal to 0.", "error");
+      showAddItemMessage("Current stock must be a valid number greater than or equal to 0.", "error");
       return;
     }
 
     if (newThreshold === "" || Number.isNaN(thresholdValue) || thresholdValue < 1) {
       alert("Reorder threshold must be a valid number greater than or equal to 1.");
-      showMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
+      showAddItemMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
       return;
     }
 
@@ -209,11 +282,11 @@ function App() {
 
       if (!response.ok) {
         alert(data.message || "Failed to add inventory item.");
-        showMessage(data.message || "Failed to add inventory item.", "error");
+        showAddItemMessage(data.message || "Failed to add inventory item.", "error");
         return;
       }
 
-      showMessage(data.message || "Inventory item added successfully.", "success");
+      showAddItemMessage(data.message || "Inventory item added successfully.", "success");
       setNewItemName("");
       setNewStock("");
       setNewThreshold("");
@@ -221,7 +294,7 @@ function App() {
       await fetchInventory();
     } catch (error) {
       alert("Server error while adding item.");
-      showMessage("Server error while adding item.", "error");
+      showAddItemMessage("Server error while adding item.", "error");
     }
   };
 
@@ -258,17 +331,17 @@ function App() {
 
       <main className="dashboard-container">
         <section className="hero-panel">
-  <div className="hero-content">
-    <p className="hero-label">Smart Inventory Control</p>
+          <div>
+            <p className="hero-label">Smart Inventory Control</p>
+            <h2>Monitor stock usage, detect risk, and prevent shortages.</h2>
+            <p className="hero-text">
+              Track consumption in real time and identify inventory items that need attention
+              before they become critical.
+            </p>
+          </div>
+        </section>
 
-    <h2>Monitor stock usage & prevent shortages</h2>
-
-    <p className="hero-text">
-      Real-time tracking of inventory consumption and risk levels to ensure
-      operational efficiency and avoid critical shortages.
-    </p>
-  </div>
-</section>
+        <ConfirmationBanner message={globalMessage} type={globalMessageType} />
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -294,103 +367,98 @@ function App() {
 
         <InventoryRiskLayout/>
 
-        <InventoryDashboardLayout/>
-
-        <UserAccountManagementLayout
+        <InventoryDashboardLayout
 
         inventory={inventory}
         loading={loading}
         backendConnected={backendConnected}/>
 
         <section className="panel glass-panel classification-panel">
-            <div className="panel-header">
-              <h2>Items by Risk Category</h2>
-              <span className="panel-tag">Classification</span>
+          <div className="panel-header">
+            <h2>Items by Risk Category</h2>
+            <span className="panel-tag">Classification</span>
+          </div>
+
+          <div className="category-container">
+            <div className="risk-category">
+              <h3 className="category-title high-risk-title">
+                🔴 High Risk Items ({itemsByRiskLevel.High.length})
+              </h3>
+              {itemsByRiskLevel.High.length === 0 ? (
+                <p className="empty-category">No high risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.High.map((item) => (
+                    <div className="category-item high-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4 className="high-risk-item-title">
+                          <span className="critical-icon">⚠️</span>
+                          <span>{item.itemName}</span>
+                        </h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
+                      </div>
+                      <span className="category-label high-label">High</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            
 
-            <div className="category-container">
-              <div className="risk-category">
-                <h3 className="category-title high-risk-title">
-                  🔴 High Risk Items ({itemsByRiskLevel.High.length})
-                </h3>
-                {itemsByRiskLevel.High.length === 0 ? (
-                  <p className="empty-category">No high risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.High.map((item) => (
-                      <div className="category-item high-risk-item" key={item._id}>
-                        <div className="item-info">
-                  <h4 className="high-risk-item-title">
-  <span className="critical-icon">⚠️</span>
-  <span>{item.itemName}</span>
-</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label high-label">High</span>
+            <div className="risk-category">
+              <h3 className="category-title medium-risk-title">
+                🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})
+              </h3>
+              {itemsByRiskLevel.Medium.length === 0 ? (
+                <p className="empty-category">No medium risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.Medium.map((item) => (
+                    <div className="category-item medium-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4>{item.itemName}</h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="risk-category">
-                <h3 className="category-title medium-risk-title">
-                  🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})
-                </h3>
-                {itemsByRiskLevel.Medium.length === 0 ? (
-                  <p className="empty-category">No medium risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Medium.map((item) => (
-                      <div className="category-item medium-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label medium-label">Medium</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="risk-category">
-                <h3 className="category-title low-risk-title">
-                  🟢 Low Risk Items ({itemsByRiskLevel.Low.length})
-                </h3>
-                {itemsByRiskLevel.Low.length === 0 ? (
-                  <p className="empty-category">No low risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Low.map((item) => (
-                      <div className="category-item low-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>
-                            Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
-                            <strong>{item.reorderThreshold}</strong> | Used:{" "}
-                            <strong>{item.totalUsed}</strong>
-                          </p>
-                        </div>
-                        <span className="category-label low-label">Low</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span className="category-label medium-label">Medium</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          
+
+            <div className="risk-category">
+              <h3 className="category-title low-risk-title">
+                🟢 Low Risk Items ({itemsByRiskLevel.Low.length})
+              </h3>
+              {itemsByRiskLevel.Low.length === 0 ? (
+                <p className="empty-category">No low risk items</p>
+              ) : (
+                <div className="items-list">
+                  {itemsByRiskLevel.Low.map((item) => (
+                    <div className="category-item low-risk-item" key={item._id}>
+                      <div className="item-info">
+                        <h4>{item.itemName}</h4>
+                        <p>
+                          Stock: <strong>{item.currentStock}</strong> | Threshold:{" "}
+                          <strong>{item.reorderThreshold}</strong> | Used:{" "}
+                          <strong>{item.totalUsed}</strong>
+                        </p>
+                      </div>
+                      <span className="category-label low-label">Low</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </section>
-        
 
         <section className="content-grid">
           <div className="panel glass-panel">
@@ -403,55 +471,51 @@ function App() {
               <label>
                 Item Name
                 <input
-                type="text"
-                value={newItemName}
-                onChange={(e) => {
-                  setNewItemName(e.target.value);
-                  if (messageType === "error") {
-                    clearMessage();
-                  }
-                }}
-                onBlur={() => {
-                  if (!newItemName.trim()) {
-                    alert("Please enter an item name.");
-                    showMessage("Please enter an item name.", "error");
-                  }
-                }}
-                placeholder="Enter item name"
+                  type="text"
+                  value={newItemName}
+                  onChange={(e) => {
+                    setNewItemName(e.target.value);
+                    if (addItemMessageType === "error") {
+                      clearAddItemMessage();
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!newItemName.trim()) {
+                      alert("Please enter an item name.");
+                      showAddItemMessage("Please enter an item name.", "error");
+                    }
+                  }}
+                  placeholder="Enter item name"
                 />
-                </label>
-                
-                <label>
-                  Current Stock
-                  <input
+              </label>
+
+              <label>
+                Current Stock
+                <input
                   type="number"
                   min="0"
                   value={newStock}
                   onChange={(e) => setNewStock(e.target.value)}
                   placeholder="Enter current stock"
-                  />
-                  </label>
-                  
-                  <label>
-                    Reorder Threshold
-                    <input
-                    type="number"
-                    min="1"
-                    value={newThreshold}
-                    onChange={(e) => setNewThreshold(e.target.value)}
-                    placeholder="Enter reorder threshold"
-                  />
-                </label>
-                
-                <button type="submit">Add Item</button>
-                </form>
-                
-                {message && (
-                  <div className={`status-message ${messageType}`}>
-                    {message}
-                    </div>
-                  )}
-                  </div>
+                />
+              </label>
+
+              <label>
+                Reorder Threshold
+                <input
+                  type="number"
+                  min="1"
+                  value={newThreshold}
+                  onChange={(e) => setNewThreshold(e.target.value)}
+                  placeholder="Enter reorder threshold"
+                />
+              </label>
+
+              <button type="submit">Add Item</button>
+            </form>
+
+            <ConfirmationBanner message={addItemMessage} type={addItemMessageType} />
+          </div>
 
           <div className="panel glass-panel">
             <div className="panel-header">
@@ -498,9 +562,7 @@ function App() {
               <button type="submit">Submit Usage</button>
             </form>
 
-            {message && <div className={`status-message ${messageType}`}>{message}</div>}
-
-            (feat: add success message styling and dashboard layout)
+            <ConfirmationBanner message={usageMessage} type={usageMessageType} />
           </div>
         </section>
 
@@ -635,7 +697,7 @@ function App() {
                     <tr key={log._id}>
                       <td>{log.itemName}</td>
                       <td>{log.quantityUsed}</td>
-                      <td>{new Date(log.usageDate).toLocaleDateString()}</td>
+                      <td>{formatUsageDate(log.usageDate)}</td>
                       <td>
                         <span className={`risk-badge ${getRiskDisplayClass(log.riskLevel)}`}>
                           {getRiskDisplayName(log.riskLevel)}

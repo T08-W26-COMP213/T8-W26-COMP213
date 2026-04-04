@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 
-function InventoryRiskLayout({ inventory = [], loading = false, backendConnected = false }) {
+function InventoryRiskLayout({
+  inventory = [],
+  loading = false,
+  backendConnected = false,
+  fetchInventory
+}) {
   const [filterOption, setFilterOption] = useState("all");
 
   const safeItems = inventory.filter((item) => item.riskLevel === "Low");
@@ -37,10 +42,16 @@ function InventoryRiskLayout({ inventory = [], loading = false, backendConnected
 
   return (
     <section className="panel glass-panel risk-layout-panel">
-      <div className="panel-header">
-        <h2>Inventory Risk Alerts</h2>
-        <span className="panel-tag warning-tag">Operational Staff</span>
-      </div>
+<div className="panel-header risk-header">
+  <h2>Inventory Risk Alerts</h2>
+
+  <div className="panel-header-actions">
+    <button className="refresh-btn" onClick={fetchInventory}>
+      🔄 Refresh
+    </button>
+    <span className="panel-tag warning-tag">Operational Staff</span>
+  </div>
+</div>
 
       {backendConnected && !loading && inventory.length > 0 && (
         <div className="risk-filter-bar">
