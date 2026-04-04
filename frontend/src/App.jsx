@@ -27,23 +27,10 @@ function App() {
   const [newThreshold, setNewThreshold] = useState("");
   const [backendConnected, setBackendConnected] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-  const API_URL = `${API_BASE_URL}/api/inventory`;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItemId, setEditingItemId] = useState("");
 
-  const showGlobalMessage = (text, type = "error") => {
-    setGlobalMessage(text);
-    setGlobalMessageType(type);
-  };
-
-  const clearGlobalMessage = () => {
-    setGlobalMessage("");
-    setGlobalMessageType("");
-  };
-
-  const showAddItemMessage = (text, type = "error") => {
-    setAddItemMessage(text);
-    setAddItemMessageType(type);
-  };
+  const API_URL = "http://localhost:5000/api/inventory";
 
   const clearAddItemMessage = () => {
     setAddItemMessage("");
@@ -175,6 +162,23 @@ function App() {
     return () => clearTimeout(timer);
   }, [usageMessage]);
 
+  const handleEditClick = (item) => {
+    setIsEditing(true);
+    setEditingItemId(item._id);
+    setNewItemName(item.itemName || "");
+    setNewStock(String(item.currentStock ?? ""));
+    setNewThreshold(String(item.reorderThreshold ?? ""));
+    clearMessage();
+  };
+
+  const resetItemForm = () => {
+    setIsEditing(false);
+    setEditingItemId("");
+    setNewItemName("");
+    setNewStock("");
+    setNewThreshold("");
+  };
+
   const handleUsageSubmit = async (e) => {
     e.preventDefault();
     clearUsageMessage();
@@ -264,8 +268,11 @@ function App() {
     }
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const url = isEditing ? `${API_URL}/${editingItemId}` : API_URL;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json"
         },
@@ -279,20 +286,34 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Failed to add inventory item.");
-        showAddItemMessage(data.message || "Failed to add inventory item.", "error");
+        alert(
+          data.message ||
+            (isEditing ? "Failed to update inventory item." : "Failed to add inventory item.")
+        );
+        showMessage(
+          data.message ||
+            (isEditing ? "Failed to update inventory item." : "Failed to add inventory item."),
+          "error"
+        );
         return;
       }
 
-      showAddItemMessage(data.message || "Inventory item added successfully.", "success");
-      setNewItemName("");
-      setNewStock("");
-      setNewThreshold("");
+      showMessage(
+        data.message ||
+          (isEditing
+            ? "Inventory item updated successfully."
+            : "Inventory item added successfully."),
+        "success"
+      );
 
+      resetItemForm();
       await fetchInventory();
     } catch (error) {
-      alert("Server error while adding item.");
-      showAddItemMessage("Server error while adding item.", "error");
+      alert(isEditing ? "Server error while updating item." : "Server error while adding item.");
+      showMessage(
+        isEditing ? "Server error while updating item." : "Server error while adding item.",
+        "error"
+      );
     }
   };
 
@@ -339,7 +360,7 @@ function App() {
           </div>
         </section>
 
-        <ConfirmationBanner message={globalMessage} type={globalMessageType} />
+        {message && <div className={`status-message ${messageType}`}>{message}</div>}
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -461,8 +482,8 @@ function App() {
         <section className="content-grid">
           <div className="panel glass-panel">
             <div className="panel-header">
-              <h2>Add Inventory Item</h2>
-              <span className="panel-tag">Database Entry</span>
+              <h2>{isEditing ? "Edit Inventory Item" : "Add Inventory Item"}</h2>
+              <span className="panel-tag">{isEditing ? "Edit Mode" : "Database Entry"}</span>
             </div>
 
             <form onSubmit={handleAddItem} className="usage-form">
@@ -509,10 +530,16 @@ function App() {
                 />
               </label>
 
-              <button type="submit">Add Item</button>
-            </form>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button type="submit">{isEditing ? "Update Item" : "Add Item"}</button>
 
-            <ConfirmationBanner message={addItemMessage} type={addItemMessageType} />
+                {isEditing && (
+                  <button type="button" onClick={resetItemForm}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
 
           <div className="panel glass-panel">
@@ -524,10 +551,7 @@ function App() {
             <form onSubmit={handleUsageSubmit} className="usage-form">
               <label>
                 Select Item
-                <select
-                  value={selectedItemId}
-                  onChange={(e) => setSelectedItemId(e.target.value)}
-                >
+                <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}>
                   <option value="">Select an item</option>
                   {inventory.map((item) => (
                     <option key={item._id} value={item._id}>
@@ -550,11 +574,7 @@ function App() {
 
               <label>
                 Date
-                <input
-                  type="date"
-                  value={usageDate}
-                  onChange={(e) => setUsageDate(e.target.value)}
-                />
+                <input type="date" value={usageDate} onChange={(e) => setUsageDate(e.target.value)} />
               </label>
 
               <button type="submit">Submit Usage</button>
@@ -642,12 +662,13 @@ function App() {
                   <th>Reorder Threshold</th>
                   <th>Total Used</th>
                   <th>Risk Level</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {inventory.length === 0 ? (
                   <tr>
-                    <td colSpan="5">No inventory items found.</td>
+                    <td colSpan="6">No inventory items added yet.</td>
                   </tr>
                 ) : (
                   inventory.map((item) => (
@@ -660,6 +681,11 @@ function App() {
                         <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
                           {getRiskDisplayName(item.riskLevel)}
                         </span>
+                      </td>
+                      <td>
+                        <button type="button" onClick={() => handleEditClick(item)}>
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))
