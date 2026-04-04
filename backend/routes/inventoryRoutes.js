@@ -124,6 +124,14 @@ router.post("/usage", async (req, res) => {
       });
     }
 
+    const normalizedUsageDate = String(usageDate).trim().split("T")[0];
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedUsageDate)) {
+      return res.status(400).json({
+        message: "Usage date must be in YYYY-MM-DD format"
+      });
+    }
+
     const item = await Inventory.findById(itemId);
 
     if (!item) {
@@ -146,17 +154,15 @@ router.post("/usage", async (req, res) => {
     const updatedItem = await item.save();
 
     const newUsageLog = new UsageLog({
-  itemId: updatedItem._id,
-  itemName: updatedItem.itemName,
-  quantityUsed: quantityUsed,
-  usageDate: new Date(usageDate), // fixed date format
-  remainingStock: updatedItem.currentStock,
-  riskLevel: updatedItem.riskLevel,
-  createdAt: new Date() // added timestamp
-});
+      itemId: updatedItem._id,
+      itemName: updatedItem.itemName,
+      quantityUsed,
+      usageDate: normalizedUsageDate,
+      remainingStock: updatedItem.currentStock,
+      riskLevel: updatedItem.riskLevel
+    });
 
     const savedLog = await newUsageLog.save();
-    console.log("Usage log created successfully:", savedLog);
 
     res.json({
       message: "Inventory usage logged successfully",
