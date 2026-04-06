@@ -1,6 +1,65 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import ConfirmationBanner from "./ConfirmationBanner";
 
 function UserAccountManagementLayout() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`${API_BASE_URL}/api/users`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch users.");
+      }
+
+      setUsers(data);
+    } catch (error) {
+      setMessage(error.message || "Failed to load users.");
+      setMessageType("error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleDeleteUser = async (userId, username) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${username}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        method: "DELETE"
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete user.");
+      }
+
+      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));
+      setMessage(data.message || "User deleted successfully.");
+      setMessageType("success");
+    } catch (error) {
+      setMessage(error.message || "Failed to delete user.");
+      setMessageType("error");
+    }
+  };
+
   return (
     <section className="panel glass-panel user-management-panel">
       <div className="panel-header">
@@ -8,50 +67,9 @@ function UserAccountManagementLayout() {
         <span className="panel-tag">Admin</span>
       </div>
 
+      <ConfirmationBanner message={message} type={messageType} />
+
       <div className="user-management-grid">
-        <div className="user-form-card">
-          <div className="dashboard-section-header">
-            <h3>Add User</h3>
-          </div>
-
-          <form className="usage-form">
-            <label>
-              Full Name
-              <input type="text" placeholder="Enter full name" />
-            </label>
-
-            <label>
-              Email
-              <input type="email" placeholder="Enter email address" />
-            </label>
-
-            <label>
-              Role
-              <select defaultValue="">
-                <option value="" disabled>
-                  Select role
-                </option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="staff">Staff</option>
-              </select>
-            </label>
-
-            <label>
-              Status
-              <select defaultValue="">
-                <option value="" disabled>
-                  Select status
-                </option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-
-            <button type="submit">Add User</button>
-          </form>
-        </div>
-
         <div className="user-table-card">
           <div className="dashboard-section-header">
             <h3>User Accounts</h3>
@@ -65,12 +83,37 @@ function UserAccountManagementLayout() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan="4">User account data will appear here.</td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5">Loading users...</td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan="5">No user accounts found.</td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user._id}>
+                      <td>{user.username}</td>
+                      <td>{user.email}</td>
+                      <td>{user.role}</td>
+                      <td>{user.status}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="delete-user-btn"
+                          onClick={() => handleDeleteUser(user._id, user.username)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,9 +1,9 @@
-import AddUserForm from "./AddUserForm.jsx";
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import InventoryRiskLayout from "./InventoryRiskLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
+import AddUserForm from "./AddUserForm.jsx";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 
 function App() {
@@ -31,8 +31,33 @@ function App() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingItemId, setEditingItemId] = useState("");
+  const showGlobalMessage = (text, type = "error") => {
+  setGlobalMessage(text);
+  setGlobalMessageType(type);
+};
 
-  const API_URL = "http://localhost:5000/api/inventory";
+const clearGlobalMessage = () => {
+  setGlobalMessage("");
+  setGlobalMessageType("");
+};
+
+const showAddItemMessage = (text, type = "error") => {
+  setAddItemMessage(text);
+  setAddItemMessageType(type);
+};
+
+const showMessage = (text, type = "error") => {
+  setAddItemMessage(text);
+  setAddItemMessageType(type);
+};
+
+const clearMessage = () => {
+  setAddItemMessage("");
+  setAddItemMessageType("");
+};
+
+ const API_BASE_URL = "http://localhost:5000";
+ const API_URL = `${API_BASE_URL}/api/inventory`;
 
   const clearAddItemMessage = () => {
     setAddItemMessage("");
@@ -361,8 +386,12 @@ function App() {
             </p>
           </div>
         </section>
-
-        {message && <div className={`status-message ${messageType}`}>{message}</div>}
+{globalMessage && (
+  <div className={`status-message ${globalMessageType}`}>
+    {globalMessage}
+  </div>
+)}
+        
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -386,7 +415,21 @@ function App() {
           </div>
         </section>
 
-        <InventoryRiskLayout/>
+        <InventoryRiskLayout
+  inventory={inventory}
+  loading={loading}
+  backendConnected={backendConnected}
+  fetchInventory={fetchInventory}
+/>
+
+<AddUserForm />
+<UserAccountManagementLayout />
+
+<InventoryDashboardLayout
+  inventory={inventory}
+  loading={loading}
+  backendConnected={backendConnected}
+/>
 
         <InventoryDashboardLayout
 
