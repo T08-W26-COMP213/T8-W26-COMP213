@@ -2,67 +2,110 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const Inventory = require("./models/Inventory");
+const UsageLog = require("./models/UsageLog");
 
-function calculateRiskLevel(stock, threshold) {
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/inventorydb";
+
+const calculateRiskLevel = (stock, threshold) => {
   if (stock <= threshold * 0.5) return "High";
   if (stock <= threshold) return "Medium";
   return "Low";
-}
+};
 
-const rawInventory = [
-  // 🟢 LOW RISK (8 items)
-  { itemName: "Surgical Masks", currentStock: 120, reorderThreshold: 50 },
-  { itemName: "Bandages", currentStock: 80, reorderThreshold: 25 },
-  { itemName: "Cotton Rolls", currentStock: 60, reorderThreshold: 20 },
-  { itemName: "Antibiotic Kits", currentStock: 75, reorderThreshold: 50 },
-  { itemName: "Face Towels", currentStock: 90, reorderThreshold: 30 },
-  { itemName: "Glucose Test Strips", currentStock: 150, reorderThreshold: 60 },
-  { itemName: "Medical Tape", currentStock: 95, reorderThreshold: 35 },
-  { itemName: "Sterile Gauze Pads", currentStock: 110, reorderThreshold: 45 },
+const items = [
+   // 🔴 HIGH RISK (stock <= 50% of threshold)
+  { itemName: "Hospital Gowns", currentStock: 18, reorderThreshold: 40, totalUsed: 120 },
+  { itemName: "Wheelchairs", currentStock: 7, reorderThreshold: 15, totalUsed: 35 },
+  { itemName: "Oxygen Tanks", currentStock: 10, reorderThreshold: 25, totalUsed: 60 },
+  { itemName: "Gloves (Heavy Duty)", currentStock: 18, reorderThreshold: 40, totalUsed: 85 },
 
-  // 🟡 MEDIUM RISK (5 items)
-  { itemName: "Latex Gloves", currentStock: 40, reorderThreshold: 50 },
-  { itemName: "Thermometers", currentStock: 30, reorderThreshold: 30 },
-  { itemName: "Face Shields", currentStock: 12, reorderThreshold: 20 },
-  { itemName: "Glucose Drips", currentStock: 22, reorderThreshold: 40 },
-  { itemName: "Saline Solution", currentStock: 18, reorderThreshold: 30 },
+  // 🟡 MEDIUM RISK (stock <= threshold)
+  { itemName: "Latex Gloves", currentStock: 40, reorderThreshold: 50, totalUsed: 170 },
+  { itemName: "IV Drips", currentStock: 35, reorderThreshold: 40, totalUsed: 110 },
+  { itemName: "Syringes", currentStock: 50, reorderThreshold: 50, totalUsed: 100 },
+  { itemName: "Face Towels", currentStock: 55, reorderThreshold: 60, totalUsed: 140 },
+  { itemName: "Bandages", currentStock: 60, reorderThreshold: 60, totalUsed: 125 },
 
-  // 🔴 HIGH RISK (3 items)
-  { itemName: "Sanitizer Bottles", currentStock: 15, reorderThreshold: 40 },
-  { itemName: "IV Bags", currentStock: 8, reorderThreshold: 25 },
-  { itemName: "Emergency Kits", currentStock: 3, reorderThreshold: 15 }
-];
-
-const mockInventory = rawInventory.map((item) => ({
+  // 🟢 LOW RISK (stock > threshold)
+  { itemName: "Glass Bucket", currentStock: 120, reorderThreshold: 60, totalUsed: 430 },
+  { itemName: "Surgical Masks", currentStock: 200, reorderThreshold: 80, totalUsed: 170 },
+  { itemName: "Thermometers", currentStock: 60, reorderThreshold: 30, totalUsed: 95 },
+  { itemName: "Hand Sanitizer", currentStock: 150, reorderThreshold: 70, totalUsed: 180 },
+  { itemName: "Injection Kits", currentStock: 80, reorderThreshold: 50, totalUsed: 80 },
+  { itemName: "Bedsheets", currentStock: 75, reorderThreshold: 40, totalUsed: 90 }
+].map((item) => ({
   ...item,
-
-  // 🔹 Random usage data
-  totalUsed: Math.floor(Math.random() * 100),       // 0–99
-  consumptionRate: Math.floor(Math.random() * 10),  // 0–9
-
-  // 🔹 Risk calculation
   riskLevel: calculateRiskLevel(item.currentStock, item.reorderThreshold)
 }));
 
-async function seedInventory() {
+const generateUsageLogs = (inventoryItems) => {
+  const logs = [];
+
+  inventoryItems.forEach((item) => {
+    let remainingUsage = item.totalUsed || 0;
+    const logCount = 8;
+
+    for (let i = 0; i < logCount; i++) {
+      let qty;
+
+      if (i === logCount - 1) {
+        qty = remainingUsage;
+      } else {
+        const average = Math.max(1, Math.floor(remainingUsage / (logCount - i)));
+        qty = Math.max(1, Math.floor(Math.random() * average));
+      }
+
+      remainingUsage -= qty;
+
+      logs.push({
+        itemId: item._id,
+        itemName: item.itemName,
+        quantityUsed: qty,
+        remainingStock: item.currentStock,
+        riskLevel: item.riskLevel,
+        usageDate: new Date(Date.now() - Math.random() * 1000000000)
+      });
+    }
+  });
+
+  return logs.filter((log) => log.quantityUsed > 0);
+};
+
+const seedData = async () => {
   try {
-    console.log("Connecting to MongoDB...");
-
-    await mongoose.connect(process.env.MONGO_URI);
-
-    console.log("Connected to MongoDB");
+    console.log("Starting seed...");
 
     await Inventory.deleteMany({});
-    console.log("Old inventory deleted");
+    console.log("Inventory cleared");
 
-    await Inventory.insertMany(mockInventory);
-    console.log("Seed inventory inserted successfully");
+    await UsageLog.deleteMany({});
+    console.log("Usage logs cleared");
+
+    const insertedItems = await Inventory.insertMany(items);
+    console.log("Items inserted");
+
+    const logs = generateUsageLogs(insertedItems);
+    await UsageLog.insertMany(logs);
+    console.log("Logs inserted");
+
+    console.log("🔥 Database seeded with realistic data!");
 
     await mongoose.connection.close();
-    console.log("Database connection closed");
+    process.exit(0);
   } catch (error) {
-    console.error("Seed error:", error);
+    console.error("Seeding error:", error);
+    await mongoose.connection.close();
+    process.exit(1);
   }
-}
+};
 
-seedInventory();
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("Connected to MongoDB for seeding");
+    return seedData();
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
+    process.exit(1);
+  });
