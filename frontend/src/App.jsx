@@ -5,6 +5,8 @@ import ConfirmationBanner from "./ConfirmationBanner";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import AddUserForm from "./AddUserForm.jsx";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
+import ReportDashboard from "./ReportDashboard";
+import ReportGenerationLayout from "./ReportGenerationLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -416,30 +418,21 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
         </section>
 
         <InventoryRiskLayout
-  inventory={inventory}
-  loading={loading}
-  backendConnected={backendConnected}
-  fetchInventory={fetchInventory}
-/>
+          inventory={inventory}
+          loading={loading}
+          backendConnected={backendConnected}
+          fetchInventory={fetchInventory}
+        />
 
-<AddUserForm />
-<UserAccountManagementLayout />
+        <AddUserForm />
 
-<InventoryDashboardLayout
-  inventory={inventory}
-  loading={loading}
-  backendConnected={backendConnected}
-/>
+        <UserAccountManagementLayout />
 
-        <InventoryDashboardLayout/>
-
-        <UserAccountManagementLayout/>
-
-        <ReportGenerationLayout
-
-        inventory={inventory}
-        loading={loading}
-        backendConnected={backendConnected}/>
+        <InventoryDashboardLayout
+          inventory={inventory}
+          loading={loading}
+          backendConnected={backendConnected}
+        />
 
         <section className="panel glass-panel classification-panel">
           <div className="panel-header">
@@ -786,6 +779,9 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
             </table>
           </div>
         </section>
+
+        <ReportGenerationLayout />
+        
         <section className="panel glass-panel" style={{ marginTop: "32px" }}>
   <div className="panel-header">
     <h2>Reports & Analytics</h2>
