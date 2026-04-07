@@ -955,3 +955,28 @@ tbody tr:hover {
   color: #991b1b;
   border: 1px solid rgba(239, 68, 68, 0.28);
 }
+
+.report-generation-panel {
+  margin-bottom: 24px;
+}
+
+.report-generation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.report-form-card,
+.report-preview-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 1000px) {
+  .report-generation-grid {
+    grid-template-columns: 1fr;
+  }
+}

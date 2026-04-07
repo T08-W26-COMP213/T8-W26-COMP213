@@ -5,6 +5,7 @@ import InventoryRiskLayout from "./InventoryRiskLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
+import ReportGenerationLayout from "./ReportGenerationLayout";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -367,7 +368,11 @@ function App() {
 
         <InventoryRiskLayout/>
 
-        <InventoryDashboardLayout
+        <InventoryDashboardLayout/>
+
+        <UserAccountManagementLayout/>
+
+        <ReportGenerationLayout
 
         inventory={inventory}
         loading={loading}
