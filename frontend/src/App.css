@@ -956,21 +956,6 @@ tbody tr:hover {
   border: 1px solid rgba(239, 68, 68, 0.28);
 }
 
-<<<<<<< HEAD
-.report-generation-panel {
-  margin-bottom: 24px;
-}
-
-.report-generation-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-  align-items: start;
-}
-
-.report-form-card,
-.report-preview-card {
-=======
 .risk-filter-bar {
   display: flex;
   align-items: center;
@@ -1133,18 +1118,16 @@ tbody tr:hover {
 }
 
 .user-table-card {
->>>>>>> b185e8934a66d5a5ff222cf26263c812eb095a72
   background: rgba(255, 255, 255, 0.82);
   border-radius: 18px;
   padding: 22px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-<<<<<<< HEAD
+
 }
 
 @media (max-width: 1000px) {
   .report-generation-grid {
     grid-template-columns: 1fr;
   }
-=======
->>>>>>> b185e8934a66d5a5ff222cf26263c812eb095a72
+
 }
