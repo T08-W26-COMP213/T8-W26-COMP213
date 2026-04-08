@@ -11,6 +11,16 @@ function calculateRiskLevel(stock, threshold) {
   return "Low";
 }
 
+function calculateConsumptionRate(totalUsed, createdAt) {
+  const createdDate = new Date(createdAt);
+  const today = new Date();
+
+  const diffTime = today - createdDate;
+  const diffDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+
+  return Number((totalUsed / diffDays).toFixed(2));
+}
+
 router.get("/", async (req, res) => {
   try {
     const items = await Inventory.find().sort({ createdAt: -1 });
@@ -52,6 +62,8 @@ router.post("/", async (req, res) => {
       itemName: itemName.trim(),
       currentStock: stock,
       reorderThreshold: threshold,
+      totalUsed: 0,
+      consumptionRate: 0,
       riskLevel: calculateRiskLevel(stock, threshold)
     });
 
@@ -112,6 +124,14 @@ router.post("/usage", async (req, res) => {
       });
     }
 
+    const normalizedUsageDate = String(usageDate).trim().split("T")[0];
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedUsageDate)) {
+      return res.status(400).json({
+        message: "Usage date must be in YYYY-MM-DD format"
+      });
+    }
+
     const item = await Inventory.findById(itemId);
 
     if (!item) {
@@ -127,7 +147,8 @@ router.post("/usage", async (req, res) => {
     }
 
     item.currentStock -= quantityUsed;
-    item.totalUsed += quantityUsed;
+    item.totalUsed = (item.totalUsed || 0) + quantityUsed;
+    item.consumptionRate = calculateConsumptionRate(item.totalUsed, item.createdAt);
     item.riskLevel = calculateRiskLevel(item.currentStock, item.reorderThreshold);
 
     const updatedItem = await item.save();
@@ -136,7 +157,7 @@ router.post("/usage", async (req, res) => {
       itemId: updatedItem._id,
       itemName: updatedItem.itemName,
       quantityUsed,
-      usageDate,
+      usageDate: normalizedUsageDate,
       remainingStock: updatedItem.currentStock,
       riskLevel: updatedItem.riskLevel
     });

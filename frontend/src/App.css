@@ -246,6 +246,8 @@ body {
   border-radius: 14px;
   padding: 14px 16px;
   font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
 .status-message.success {
@@ -549,4 +551,653 @@ tbody tr:hover {
   .alert-item {
     flex-direction: column;
   }
+
+}
+
+.risk-layout-panel {
+  margin-bottom: 24px;
+}
+
+.risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.risk-status-card {
+  border-radius: 18px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  min-height: 220px;
+}
+
+.risk-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.risk-status-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.risk-count {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.risk-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.risk-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.risk-stock {
+  font-size: 0.92rem;
+  opacity: 0.8;
+}
+
+.risk-empty-state {
+  padding: 28px 10px 8px;
+  text-align: center;
+}
+
+.risk-empty-state h3 {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.risk-empty-state p,
+.risk-empty-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.safe-section {
+  background: linear-gradient(180deg, rgba(236, 253, 245, 0.95), rgba(209, 250, 229, 0.85));
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.safe-section .risk-status-header h3,
+.safe-section .risk-item {
+  color: #166534;
+}
+
+.safe-section .risk-count,
+.safe-section .risk-item {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.at-risk-section {
+  background: linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.88));
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+.at-risk-section .risk-status-header h3,
+.at-risk-section .risk-item {
+  color: #92400e;
+}
+
+.at-risk-section .risk-count,
+.at-risk-section .risk-item {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.critical-section {
+  background: linear-gradient(180deg, rgba(254, 242, 242, 0.96), rgba(254, 202, 202, 0.88));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.critical-section .risk-status-header h3,
+.critical-section .risk-item {
+  color: #991b1b;
+}
+
+.critical-section .risk-count,
+.critical-section .risk-item {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.dashboard-layout-panel {
+  margin-bottom: 24px;
+}
+
+.dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.dashboard-summary-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  text-align: center;
+}
+
+.dashboard-summary-card h3 {
+  margin: 10px 0 0;
+  font-size: 2rem;
+  color: #1e3a8a;
+}
+
+.dashboard-card-label {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
+.dashboard-content-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-table-card,
+.dashboard-chart-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-section-header {
+  margin-bottom: 16px;
+}
+
+.dashboard-section-header h3 {
+  margin: 0;
+  font-size: 1.9rem;
+  color: #1e3a8a;
+  text-align: center;
+}
+
+.dashboard-table-wrapper {
+  overflow-x: auto;
+}
+
+.dashboard-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table-wrapper th {
+  background: #e8eef9;
+  color: #1e3a8a;
+  padding: 18px 16px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.dashboard-table-wrapper td {
+  padding: 20px 16px;
+  text-align: center;
+  color: #475569;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.98rem;
+}
+
+.dashboard-chart-placeholder {
+  min-height: 320px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background: #f8fafc;
+  text-align: center;
+  padding: 24px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-form input,
+.usage-form select {
+  color: #14213d !important;
+  background: #ffffff !important;
+  -webkit-text-fill-color: #14213d;
+}
+
+.usage-form input::placeholder {
+  color: #7a7a7a;
+  opacity: 1;
+}
+
+}
+
+.user-management-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.user-form-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.user-form-layout label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 700;
+  color: #27364f;
+}
+
+.user-form-layout input,
+.user-form-layout select {
+  width: 100%;
+  border: 1px solid #d7e1f3;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  background: #fbfdff;
+  outline: none;
+}
+
+.user-form-layout button {
+  border: none;
+  border-radius: 14px;
+  padding: 15px 18px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.risk-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-btn {
+  border: none;
+  outline: none;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.22);
+}
+
+.dashboard-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.dashboard-bar-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-bar-label {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.dashboard-bar-track {
+  width: 100%;
+  height: 16px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dashboard-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  border-radius: 999px;
+}
+
+.dashboard-bar-value {
+  font-weight: 700;
+  color: #1e3a8a;
+  text-align: right;
+}
+
+.add-user-panel {
+  margin: 24px 0;
+}
+
+.add-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.add-user-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.add-user-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.add-user-grid input,
+.add-user-grid select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  font-size: 1rem;
+  outline: none;
+  background: #f8fafc;
+  color: #0f172a;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.add-user-grid input:focus,
+.add-user-grid select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+}
+
+.add-user-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.add-user-actions button {
+  border: none;
+  border-radius: 16px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.add-user-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(37, 99, 235, 0.28);
+}
+
+@media (max-width: 900px) {
+  .add-user-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-user-actions {
+    justify-content: stretch;
+  }
+
+  .add-user-actions button {
+    width: 100%;
+  }
+}
+
+.confirmation-banner {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.confirmation-banner.success {
+  background: rgba(34, 197, 94, 0.14);
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.confirmation-banner.error {
+  background: rgba(239, 68, 68, 0.14);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.risk-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 18px;
+  justify-content: center;
+}
+
+.risk-filter-bar label {
+  font-weight: 700;
+  color: #27364f;
+}
+
+.risk-filter-select {
+  border: 1px solid #d7e1f3;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.98rem;
+  background: #fbfdff;
+  color: #14213d;
+  outline: none;
+}
+
+.risk-filter-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.risk-chart-panel {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #e5edf9;
+  border-radius: 18px;
+  padding: 18px 16px;
+  margin-bottom: 18px;
+}
+
+.risk-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.risk-chart-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #173b8f;
+}
+
+.risk-chart-subtitle {
+  color: #64748b;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.risk-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.risk-chart-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 14px;
+}
+
+.risk-chart-label {
+  font-weight: 700;
+  color: #334155;
+}
+
+.risk-chart-track {
+  width: 100%;
+  height: 14px;
+  background: #dbe4f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.risk-chart-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.risk-chart-fill.safe {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.risk-chart-fill.at-risk {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.risk-chart-fill.critical {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.risk-chart-count {
+  font-weight: 800;
+  color: #173b8f;
+  text-align: right;
+}
+
+.risk-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-item-name {
+  font-weight: 600;
+}
+
+.critical-icon {
+  font-size: 1rem;
+}
+
+.item-info {
+  flex: 1;
+  text-align: left;
+}
+
+.item-info h4,
+.high-risk-item-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0 0 6px 0;
+  text-align: left;
+}
+
+.high-risk-item-title span {
+  display: inline-block;
+}
+
+.critical-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.delete-user-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.delete-user-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(239, 68, 68, 0.24);
+}
+
+.user-table-card {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+
+}
+
+@media (max-width: 1000px) {
+  .report-generation-grid {
+    grid-template-columns: 1fr;
+  }
+
 }

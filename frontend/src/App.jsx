@@ -11,8 +11,16 @@ function App() {
   const [quantityUsed, setQuantityUsed] = useState("");
   const [usageDate, setUsageDate] = useState(new Date().toISOString().split("T")[0]);
   const [usageLogs, setUsageLogs] = useState([]);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+
+  const [globalMessage, setGlobalMessage] = useState("");
+  const [globalMessageType, setGlobalMessageType] = useState("");
+
+  const [addItemMessage, setAddItemMessage] = useState("");
+  const [addItemMessageType, setAddItemMessageType] = useState("");
+
+  const [usageMessage, setUsageMessage] = useState("");
+  const [usageMessageType, setUsageMessageType] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   const [newItemName, setNewItemName] = useState("");
@@ -20,16 +28,78 @@ function App() {
   const [newThreshold, setNewThreshold] = useState("");
   const [backendConnected, setBackendConnected] = useState(false);
 
-  const API_URL = "http://localhost:5000/api/inventory";
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItemId, setEditingItemId] = useState("");
+  const showGlobalMessage = (text, type = "error") => {
+  setGlobalMessage(text);
+  setGlobalMessageType(type);
+};
 
-  const showMessage = (text, type = "error") => {
-    setMessage(text);
-    setMessageType(type);
+const clearGlobalMessage = () => {
+  setGlobalMessage("");
+  setGlobalMessageType("");
+};
+
+const showAddItemMessage = (text, type = "error") => {
+  setAddItemMessage(text);
+  setAddItemMessageType(type);
+};
+
+const showMessage = (text, type = "error") => {
+  setAddItemMessage(text);
+  setAddItemMessageType(type);
+};
+
+const clearMessage = () => {
+  setAddItemMessage("");
+  setAddItemMessageType("");
+};
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = `${API_BASE_URL}/api/inventory`;
+
+  const clearAddItemMessage = () => {
+    setAddItemMessage("");
+    setAddItemMessageType("");
   };
 
-  const clearMessage = () => {
-    setMessage("");
-    setMessageType("");
+  const showUsageMessage = (text, type = "error") => {
+    setUsageMessage(text);
+    setUsageMessageType(type);
+  };
+
+  const clearUsageMessage = () => {
+    setUsageMessage("");
+    setUsageMessageType("");
+  };
+
+  const getRiskDisplayName = (riskLevel) => {
+    if (riskLevel === "High") return "Critical";
+    if (riskLevel === "Medium") return "At Risk";
+    return "Safe";
+  };
+
+  const getRiskDisplayClass = (riskLevel) => {
+    if (riskLevel === "High") return "high";
+    if (riskLevel === "Medium") return "medium";
+    return "low";
+  };
+
+  const formatUsageDate = (value) => {
+    if (!value) return "";
+
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split("-");
+      return `${year}/${Number(month)}/${Number(day)}`;
+    }
+
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return String(value);
+    }
+
+    return `${parsed.getFullYear()}/${parsed.getMonth() + 1}/${parsed.getDate()}`;
   };
 
   const fetchInventory = async () => {
@@ -52,7 +122,7 @@ function App() {
         setSelectedItemId("");
       }
     } catch (error) {
-      showMessage("Failed to load inventory data.", "error");
+      showGlobalMessage("Failed to load inventory data.", "error");
     }
   };
 
@@ -67,14 +137,14 @@ function App() {
 
       setUsageLogs(data);
     } catch (error) {
-      showMessage("Failed to load usage logs.", "error");
+      showGlobalMessage("Failed to load usage logs.", "error");
     }
   };
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/health");
+        const res = await fetch(`${API_BASE_URL}/api/health`);
         setBackendConnected(res.ok);
       } catch (error) {
         setBackendConnected(false);
@@ -88,27 +158,74 @@ function App() {
     initializeApp();
   }, []);
 
+  useEffect(() => {
+    if (!globalMessage) return;
+
+    const timer = setTimeout(() => {
+      clearGlobalMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [globalMessage]);
+
+  useEffect(() => {
+    if (!addItemMessage) return;
+
+    const timer = setTimeout(() => {
+      clearAddItemMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [addItemMessage]);
+
+  useEffect(() => {
+    if (!usageMessage) return;
+
+    const timer = setTimeout(() => {
+      clearUsageMessage();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [usageMessage]);
+
+  const handleEditClick = (item) => {
+    setIsEditing(true);
+    setEditingItemId(item._id);
+    setNewItemName(item.itemName || "");
+    setNewStock(String(item.currentStock ?? ""));
+    setNewThreshold(String(item.reorderThreshold ?? ""));
+    clearMessage();
+  };
+
+  const resetItemForm = () => {
+    setIsEditing(false);
+    setEditingItemId("");
+    setNewItemName("");
+    setNewStock("");
+    setNewThreshold("");
+  };
+
   const handleUsageSubmit = async (e) => {
     e.preventDefault();
-    clearMessage();
+    clearUsageMessage();
 
     const usedQty = Number(quantityUsed);
 
     if (!selectedItemId) {
       alert("Please choose an item before submitting.");
-      showMessage("Please choose an item before submitting.", "error");
+      showUsageMessage("Please choose an item before submitting.", "error");
       return;
     }
 
     if (!usageDate || !String(usageDate).trim()) {
       alert("Please choose the date of use.");
-      showMessage("Please choose the date of use.", "error");
+      showUsageMessage("Please choose the date of use.", "error");
       return;
     }
 
     if (quantityUsed === "" || Number.isNaN(usedQty) || usedQty <= 0) {
       alert("Please enter a quantity greater than 0.");
-      showMessage("Please enter a quantity greater than 0.", "error");
+      showUsageMessage("Please enter a quantity greater than 0.", "error");
       return;
     }
 
@@ -128,28 +245,25 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Could not save this usage entry.");
-        showMessage(data.message || "Could not save this usage entry.", "error");
+        alert(data.message || "Failed to update inventory usage.");
+        showUsageMessage(data.message || "Failed to update inventory usage.", "error");
         return;
       }
 
-      showMessage(
-        "Usage recorded successfully",
-        "success"
-      );
+      showUsageMessage(data.message || "Usage recorded successfully.", "success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
       await Promise.all([fetchInventory(), fetchUsageLogs()]);
     } catch (error) {
       alert("Something went wrong while saving the usage entry.");
-      showMessage("Something went wrong while saving the usage entry.", "error");
+      showUsageMessage("Something went wrong while saving the usage entry.", "error");
     }
   };
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    clearMessage();
+    clearAddItemMessage();
 
     const trimmedItemName = newItemName.trim();
     const stockValue = Number(newStock);
@@ -157,31 +271,34 @@ function App() {
 
     if (newItemName === "" || trimmedItemName === "") {
       alert("Please enter an item name.");
-      showMessage("Please enter an item name.", "error");
+      showAddItemMessage("Please enter an item name.", "error");
       return;
     }
 
     if (trimmedItemName.length < 2) {
       alert("Item name must be at least 2 characters long.");
-      showMessage("Item name must be at least 2 characters long.", "error");
+      showAddItemMessage("Item name must be at least 2 characters long.", "error");
       return;
     }
 
     if (newStock === "" || Number.isNaN(stockValue) || stockValue < 0) {
       alert("Current stock must be a valid number greater than or equal to 0.");
-      showMessage("Current stock must be a valid number greater than or equal to 0.", "error");
+      showAddItemMessage("Current stock must be a valid number greater than or equal to 0.", "error");
       return;
     }
 
     if (newThreshold === "" || Number.isNaN(thresholdValue) || thresholdValue < 1) {
       alert("Reorder threshold must be a valid number greater than or equal to 1.");
-      showMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
+      showAddItemMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
       return;
     }
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const url = isEditing ? `${API_URL}/${editingItemId}` : API_URL;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json"
         },
@@ -195,20 +312,34 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Failed to add inventory item.");
-        showMessage(data.message || "Failed to add inventory item.", "error");
+        alert(
+          data.message ||
+            (isEditing ? "Failed to update inventory item." : "Failed to add inventory item.")
+        );
+        showMessage(
+          data.message ||
+            (isEditing ? "Failed to update inventory item." : "Failed to add inventory item."),
+          "error"
+        );
         return;
       }
 
-      showMessage(data.message || "Inventory item added successfully.", "success");
-      setNewItemName("");
-      setNewStock("");
-      setNewThreshold("");
+      showMessage(
+        data.message ||
+          (isEditing
+            ? "Inventory item updated successfully."
+            : "Inventory item added successfully."),
+        "success"
+      );
 
+      resetItemForm();
       await fetchInventory();
     } catch (error) {
-      alert("Server error while adding item.");
-      showMessage("Server error while adding item.", "error");
+      alert(isEditing ? "Server error while updating item." : "Server error while adding item.");
+      showMessage(
+        isEditing ? "Server error while updating item." : "Server error while adding item.",
+        "error"
+      );
     }
   };
 
@@ -365,6 +496,12 @@ function App() {
             </p>
           </div>
         </section>
+{globalMessage && (
+  <div className={`status-message ${globalMessageType}`}>
+    {globalMessage}
+  </div>
+)}
+        
 
         <Report
           inventory={inventory}
@@ -379,8 +516,8 @@ function App() {
         <section className="content-grid">
           <div className="panel glass-panel">
             <div className="panel-header">
-              <h2>Add Inventory Item</h2>
-              <span className="panel-tag">Database Entry</span>
+              <h2>{isEditing ? "Edit Inventory Item" : "Add Inventory Item"}</h2>
+              <span className="panel-tag">{isEditing ? "Edit Mode" : "Database Entry"}</span>
             </div>
 
             <form onSubmit={handleAddItem} className="usage-form">
@@ -391,14 +528,14 @@ function App() {
                   value={newItemName}
                   onChange={(e) => {
                     setNewItemName(e.target.value);
-                    if (messageType === "error") {
-                      clearMessage();
+                    if (addItemMessageType === "error") {
+                      clearAddItemMessage();
                     }
                   }}
                   onBlur={() => {
                     if (!newItemName.trim()) {
                       alert("Please enter an item name.");
-                      showMessage("Please enter an item name.", "error");
+                      showAddItemMessage("Please enter an item name.", "error");
                     }
                   }}
                   placeholder="Enter item name"
@@ -427,7 +564,15 @@ function App() {
                 />
               </label>
 
-              <button type="submit">Add Item</button>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button type="submit">{isEditing ? "Update Item" : "Add Item"}</button>
+
+                {isEditing && (
+                  <button type="button" onClick={resetItemForm}>
+                    Cancel
+                  </button>
+                )}
+              </div>
             </form>
           </div>
 
@@ -440,10 +585,7 @@ function App() {
             <form onSubmit={handleUsageSubmit} className="usage-form">
               <label>
                 Select Item
-                <select
-                  value={selectedItemId}
-                  onChange={(e) => setSelectedItemId(e.target.value)}
-                >
+                <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}>
                   <option value="">Select an item</option>
                   {inventory.map((item) => (
                     <option key={item._id} value={item._id}>
@@ -466,11 +608,7 @@ function App() {
 
               <label>
                 Date
-                <input
-                  type="date"
-                  value={usageDate}
-                  onChange={(e) => setUsageDate(e.target.value)}
-                />
+                <input type="date" value={usageDate} onChange={(e) => setUsageDate(e.target.value)} />
               </label>
 
               <button type="submit">Submit Usage</button>
@@ -509,9 +647,15 @@ function App() {
                       <p>
                         Reorder Threshold: <strong>{item.reorderThreshold}</strong>
                       </p>
+                      <p>
+                        Status:{" "}
+                        <strong>
+                          {item.currentStock <= item.reorderThreshold ? "Alert Triggered" : "Normal"}
+                        </strong>
+                      </p>
                     </div>
-                    <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-                      {item.riskLevel}
+                    <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
+                      {getRiskDisplayName(item.riskLevel)}
                     </span>
                   </div>
                 ))}
