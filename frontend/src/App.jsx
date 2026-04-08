@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import "./App.css";
 import ConfirmationBanner from "./ConfirmationBanner";
+import Report from "./Report";
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -231,12 +234,123 @@ function App() {
     return inventory.reduce((sum, item) => sum + item.currentStock, 0);
   }, [inventory]);
 
+  const reportDate = new Date().toISOString().slice(0, 10);
+
+  const downloadCSV = () => {
+    const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [];
+
+    rows.push(["Inventory Report"]);
+    rows.push(["Generated", reportDate]);
+    rows.push([]);
+    rows.push(["Summary"]);
+    rows.push(["Total Inventory Items", totalItems]);
+    rows.push(["Units Remaining", totalUnitsRemaining]);
+    rows.push(["Low Stock Alerts", lowStockItems.length]);
+    rows.push(["High Risk Items", highRiskItems.length]);
+    rows.push([]);
+    rows.push(["Inventory Overview"]);
+    rows.push(["Item Name", "Stock Level", "Risk Level", "Threshold", "Used"]);
+    inventory.forEach((item) => {
+      rows.push([
+        item.itemName,
+        item.currentStock,
+        item.riskLevel,
+        item.reorderThreshold,
+        item.totalUsed ?? 0
+      ]);
+    });
+    rows.push([]);
+    rows.push(["Inventory Usage Log"]);
+    rows.push(["Item Name", "Quantity Used", "Date", "Remaining Stock", "Risk Level"]);
+    usageLogs.forEach((log) => {
+      rows.push([
+        log.itemName,
+        log.quantityUsed,
+        log.usageDate || "N/A",
+        log.remainingStock ?? "",
+        log.riskLevel
+      ]);
+    });
+
+    const csvContent = rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const filename = `inventory-report-${reportDate}.csv`;
+    const link = document.createElement("a");
+
+    if (navigator.msSaveBlob) {
+      navigator.msSaveBlob(blob, filename);
+    } else {
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Inventory Report", 14, 18);
+    doc.setFontSize(11);
+    doc.text(`Generated: ${reportDate}`, 14, 26);
+    doc.text(`Total Items: ${totalItems}`, 14, 34);
+    doc.text(`Units Remaining: ${totalUnitsRemaining}`, 14, 40);
+    doc.text(`Low Stock Alerts: ${lowStockItems.length}`, 14, 46);
+    doc.text(`High Risk Items: ${highRiskItems.length}`, 14, 52);
+
+    doc.autoTable({
+      startY: 60,
+      head: [["Item Name", "Stock", "Risk", "Threshold", "Used"]],
+      body: inventory.map((item) => [
+        item.itemName,
+        item.currentStock,
+        item.riskLevel,
+        item.reorderThreshold,
+        item.totalUsed ?? 0
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [23, 59, 143], textColor: 255 },
+      styles: { fontSize: 9, cellPadding: 3 }
+    });
+
+    if (usageLogs.length > 0) {
+      doc.addPage();
+      doc.autoTable({
+        startY: 14,
+        head: [["Item Name", "Quantity Used", "Date", "Remaining Stock", "Risk Level"]],
+        body: usageLogs.map((log) => [
+          log.itemName,
+          log.quantityUsed,
+          log.usageDate || "N/A",
+          log.remainingStock ?? "",
+          log.riskLevel
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [23, 59, 143], textColor: 255 },
+        styles: { fontSize: 9, cellPadding: 3 }
+      });
+    }
+
+    doc.save(`inventory-report-${reportDate}.pdf`);
+  };
+
   return (
     <div className="app-shell">
       <nav className="topbar">
-        <div>
-          <h1 className="brand">StockGuard</h1>
-          <p className="brand-subtitle">Inventory Risk Monitoring Dashboard</p>
+        <div className="brand-group">
+          <div>
+            <h1 className="brand">StockGuard</h1>
+            <p className="brand-subtitle">Inventory Risk Monitoring Dashboard</p>
+          </div>
+        </div>
+
+        <div className="topbar-actions">
+          <button type="button" onClick={downloadCSV}>Export CSV</button>
+          <button type="button" onClick={downloadPDF}>Export PDF</button>
         </div>
       </nav>
 
@@ -252,98 +366,15 @@ function App() {
           </div>
         </section>
 
-        <section className="stats-grid">
-          <div className="stat-card">
-            <p className="stat-title">Total Inventory Items</p>
-            <h3>{totalItems}</h3>
-          </div>
-
-          <div className="stat-card">
-            <p className="stat-title">Units Remaining</p>
-            <h3>{totalUnitsRemaining}</h3>
-          </div>
-
-          <div className="stat-card">
-            <p className="stat-title">Low Stock Alerts</p>
-            <h3>{lowStockItems.length}</h3>
-          </div>
-
-          <div className="stat-card">
-            <p className="stat-title">High Risk Items</p>
-            <h3>{highRiskItems.length}</h3>
-          </div>
-        </section>
-
-        <section className="content-grid">
-          <div className="panel glass-panel">
-            <div className="panel-header">
-              <h2>Items by Risk Category</h2>
-              <span className="panel-tag">Classification</span>
-            </div>
-
-            <div className="category-container">
-              {/* High Risk Items */}
-              <div className="risk-category">
-                <h3 className="category-title high-risk-title">🔴 High Risk Items ({itemsByRiskLevel.High.length})</h3>
-                {itemsByRiskLevel.High.length === 0 ? (
-                  <p className="empty-category">No high-risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.High.map((item) => (
-                      <div className="category-item high-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
-                        </div>
-                        <span className="category-label high-label">High</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Medium Risk Items */}
-              <div className="risk-category">
-                <h3 className="category-title medium-risk-title">🟡 Medium Risk Items ({itemsByRiskLevel.Medium.length})</h3>
-                {itemsByRiskLevel.Medium.length === 0 ? (
-                  <p className="empty-category">No medium-risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Medium.map((item) => (
-                      <div className="category-item medium-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
-                        </div>
-                        <span className="category-label medium-label">Medium</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Low Risk Items */}
-              <div className="risk-category">
-                <h3 className="category-title low-risk-title">🟢 Low Risk Items ({itemsByRiskLevel.Low.length})</h3>
-                {itemsByRiskLevel.Low.length === 0 ? (
-                  <p className="empty-category">No low-risk items</p>
-                ) : (
-                  <div className="items-list">
-                    {itemsByRiskLevel.Low.map((item) => (
-                      <div className="category-item low-risk-item" key={item._id}>
-                        <div className="item-info">
-                          <h4>{item.itemName}</h4>
-                          <p>Stock: <strong>{item.currentStock}</strong> | Threshold: <strong>{item.reorderThreshold}</strong> | Used: <strong>{item.totalUsed}</strong></p>
-                        </div>
-                        <span className="category-label low-label">Low</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
+        <Report
+          inventory={inventory}
+          usageLogs={usageLogs}
+          lowStockItems={lowStockItems}
+          highRiskItems={highRiskItems}
+          itemsByRiskLevel={itemsByRiskLevel}
+          totalItems={totalItems}
+          totalUnitsRemaining={totalUnitsRemaining}
+        />
 
         <section className="content-grid">
           <div className="panel glass-panel">
@@ -511,85 +542,6 @@ function App() {
           </div>
         </section>
 
-        <section className="table-panel">
-          <div className="panel-header">
-            <h2>Inventory Overview</h2>
-            <span className="panel-tag">System Summary</span>
-          </div>
-
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Stock Level</th>
-                  <th>Risk Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.length === 0 ? (
-                  <tr>
-                    <td colSpan="3">No inventory items added yet.</td>
-                  </tr>
-                ) : (
-                  inventory.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.itemName}</td>
-                      <td>{item.currentStock}</td>
-                      <td>
-                        <span className={`risk-badge ${item.riskLevel.toLowerCase()}`}>
-                          {item.riskLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="table-panel">
-          <div className="panel-header">
-            <h2>Inventory Usage Log</h2>
-            <span className="panel-tag">Submission History</span>
-          </div>
-
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Quantity Used</th>
-                  <th>Date</th>
-                  <th>Remaining Stock</th>
-                  <th>Risk Level</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usageLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="5">No usage records submitted yet.</td>
-                  </tr>
-                ) : (
-                  usageLogs.map((log) => (
-                    <tr key={log._id}>
-                      <td>{log.itemName}</td>
-                      <td>{log.quantityUsed}</td>
-                      <td>{log.usageDate || "N/A"}</td>
-                      <td>{log.remainingStock}</td>
-                      <td>
-                        <span className={`risk-badge ${log.riskLevel.toLowerCase()}`}>
-                          {log.riskLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </main>
     </div>
   );

@@ -26,6 +26,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
   padding: 22px 40px;
   background: linear-gradient(135deg, #173b8f, #2563eb 60%, #4f46e5);
   color: white;
@@ -51,6 +52,34 @@ body {
   border-radius: 999px;
   font-weight: 600;
   backdrop-filter: blur(10px);
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.topbar-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.topbar-actions button:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
 }
 
 .dashboard-container {
@@ -353,6 +382,47 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.report-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.report-actions button {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.report-actions button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.24);
+}
+
+.hero-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-action-label {
+  font-weight: 700;
+  color: #eef4ff;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .alert-item {
