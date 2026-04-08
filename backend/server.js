@@ -2,38 +2,85 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
-const reportRoutes = require("./routes/reportRoutes");
 
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const userRoutes = require("./routes/userRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/inventorydb";
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Database connection
+const getDatabaseStatus = () => {
+  const readyState = mongoose.connection.readyState;
+
+  return {
+    connected: readyState === 1,
+    readyState,
+    stateLabel:
+      readyState === 1
+        ? "connected"
+        : readyState === 2
+        ? "connecting"
+        : readyState === 3
+        ? "disconnecting"
+        : "disconnected"
+  };
+};
+
+const requireDatabaseConnection = (req, res, next) => {
+  const databaseStatus = getDatabaseStatus();
+
+  if (!databaseStatus.connected) {
+    return res.status(503).json({
+      message: "MongoDB is not connected. Start MongoDB or update MONGO_URI, then try again.",
+      database: databaseStatus
+    });
+  }
+
+  next();
+};
+
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/inventorydb")
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.error("MongoDB connection error:", error));
+  .connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 3000
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error.message);
+  });
 
-// Routes
-app.use("/api/inventory", inventoryRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/reports", reportRoutes);
+mongoose.connection.on("connected", () => {
+  console.log("MongoDB connection established");
+});
 
-// Health check
+mongoose.connection.on("disconnected", () => {
+  console.log("MongoDB disconnected");
+});
+
+mongoose.connection.on("error", (error) => {
+  console.error("MongoDB runtime error:", error.message);
+});
+
 app.get("/api/health", (req, res) => {
+  const database = getDatabaseStatus();
+
   res.json({
     status: "OK",
-    message: "Server is running"
+    message: "Server is running",
+    database
   });
 });
 
-// Error handling middleware
+app.use("/api/inventory", requireDatabaseConnection, inventoryRoutes);
+app.use("/api/users", requireDatabaseConnection, userRoutes);
+app.use("/api/reports", requireDatabaseConnection, reportRoutes);
+
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
   res.status(500).json({ message: err.message || "Something went wrong!" });

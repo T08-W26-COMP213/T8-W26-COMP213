@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = `${API_BASE_URL}/api/inventory`;
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -14,223 +15,263 @@ function App() {
 
   const [globalMessage, setGlobalMessage] = useState("");
   const [globalMessageType, setGlobalMessageType] = useState("");
-
   const [addItemMessage, setAddItemMessage] = useState("");
   const [addItemMessageType, setAddItemMessageType] = useState("");
-
   const [usageMessage, setUsageMessage] = useState("");
   const [usageMessageType, setUsageMessageType] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [backendConnected, setBackendConnected] = useState(false);
+  const [databaseConnected, setDatabaseConnected] = useState(false);
 
   const [newItemName, setNewItemName] = useState("");
   const [newStock, setNewStock] = useState("");
   const [newThreshold, setNewThreshold] = useState("");
-  const [backendConnected, setBackendConnected] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
   const [editingItemId, setEditingItemId] = useState("");
-  const showGlobalMessage = (text, type = "error") => {
-  setGlobalMessage(text);
-  setGlobalMessageType(type);
-};
 
-const clearGlobalMessage = () => {
-  setGlobalMessage("");
-  setGlobalMessageType("");
-};
+  const showGlobalMessage = useCallback((text, type = "error") => {
+    setGlobalMessage(text);
+    setGlobalMessageType(type);
+  }, []);
 
-const showAddItemMessage = (text, type = "error") => {
-  setAddItemMessage(text);
-  setAddItemMessageType(type);
-};
+  const clearGlobalMessage = useCallback(() => {
+    setGlobalMessage("");
+    setGlobalMessageType("");
+  }, []);
 
-const showMessage = (text, type = "error") => {
-  setAddItemMessage(text);
-  setAddItemMessageType(type);
-};
+  const showAddItemMessage = useCallback((text, type = "error") => {
+    setAddItemMessage(text);
+    setAddItemMessageType(type);
+  }, []);
 
-const clearMessage = () => {
-  setAddItemMessage("");
-  setAddItemMessageType("");
-};
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const API_URL = `${API_BASE_URL}/api/inventory`;
-
-  const clearAddItemMessage = () => {
+  const clearAddItemMessage = useCallback(() => {
     setAddItemMessage("");
     setAddItemMessageType("");
-  };
+  }, []);
 
-  const showUsageMessage = (text, type = "error") => {
+  const showUsageMessage = useCallback((text, type = "error") => {
     setUsageMessage(text);
     setUsageMessageType(type);
-  };
+  }, []);
 
-  const clearUsageMessage = () => {
+  const clearUsageMessage = useCallback(() => {
     setUsageMessage("");
     setUsageMessageType("");
-  };
+  }, []);
 
-  const getRiskDisplayName = (riskLevel) => {
+  const clearAllMessages = useCallback(() => {
+    clearAddItemMessage();
+    clearUsageMessage();
+    clearGlobalMessage();
+  }, [clearAddItemMessage, clearGlobalMessage, clearUsageMessage]);
+
+  const fetchJson = useCallback(async (url, options = {}) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+
+      const rawText = await response.text();
+      let data = {};
+
+      if (rawText) {
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          data = { message: rawText };
+        }
+      }
+
+      return { response, data };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, []);
+
+  const getRiskDisplayName = useCallback((riskLevel) => {
     if (riskLevel === "High") return "Critical";
     if (riskLevel === "Medium") return "At Risk";
     return "Safe";
-  };
+  }, []);
 
-  const getRiskDisplayClass = (riskLevel) => {
+  const getRiskDisplayClass = useCallback((riskLevel) => {
     if (riskLevel === "High") return "high";
     if (riskLevel === "Medium") return "medium";
     return "low";
-  };
+  }, []);
 
-  const formatUsageDate = (value) => {
-    if (!value) return "";
+ const formatUsageDate = useCallback((value) => {
+  if (!value) return "";
 
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [year, month, day] = value.split("-");
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split("-");
       return `${year}/${Number(month)}/${Number(day)}`;
     }
 
-    const parsed = new Date(value);
+    const cleaned = trimmed.replace(/\s*\([^)]*\)\s*$/, "");
+    const parsedFromCleaned = new Date(cleaned);
 
-    if (Number.isNaN(parsed.getTime())) {
-      return String(value);
+    if (!Number.isNaN(parsedFromCleaned.getTime())) {
+      return `${parsedFromCleaned.getFullYear()}/${parsedFromCleaned.getMonth() + 1}/${parsedFromCleaned.getDate()}`;
     }
+  }
 
+  const parsed = new Date(value);
+
+  if (!Number.isNaN(parsed.getTime())) {
     return `${parsed.getFullYear()}/${parsed.getMonth() + 1}/${parsed.getDate()}`;
-  };
+  }
 
-  const fetchInventory = async () => {
+  return String(value);
+}, []);
+
+  const fetchInventory = useCallback(async () => {
     try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      const { response, data } = await fetchJson(API_URL);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch inventory.");
       }
 
-      setInventory(data);
-
-      if (data.length > 0) {
-        const selectedStillExists = data.find((item) => item._id === selectedItemId);
-        if (!selectedStillExists) {
-          setSelectedItemId(data[0]._id);
-        }
-      } else {
-        setSelectedItemId("");
-      }
+      setInventory(Array.isArray(data) ? data : []);
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      showGlobalMessage("Failed to load inventory data.", "error");
+      setInventory([]);
+      showGlobalMessage(error.message || "Failed to load inventory data.", "error");
+      return [];
     }
-  };
+  }, [fetchJson, showGlobalMessage]);
 
-  const fetchUsageLogs = async () => {
+  const fetchUsageLogs = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/logs`);
-      const data = await response.json();
+      const { response, data } = await fetchJson(`${API_URL}/logs`);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch usage logs.");
       }
 
-      setUsageLogs(data);
+      setUsageLogs(Array.isArray(data) ? data : []);
+      return Array.isArray(data) ? data : [];
     } catch (error) {
-      showGlobalMessage("Failed to load usage logs.", "error");
+      setUsageLogs([]);
+      showGlobalMessage(error.message || "Failed to load usage logs.", "error");
+      return [];
     }
-  };
+  }, [fetchJson, showGlobalMessage]);
 
   useEffect(() => {
     const initializeApp = async () => {
+      setLoading(true);
+      clearAllMessages();
+
       try {
-        const res = await fetch(`${API_BASE_URL}/api/health`);
-        setBackendConnected(res.ok);
-      } catch (error) {
+        const { response, data } = await fetchJson(`${API_BASE_URL}/api/health`);
+        setBackendConnected(response.ok);
+        setDatabaseConnected(Boolean(data?.database?.connected));
+      } catch {
         setBackendConnected(false);
+        setDatabaseConnected(false);
       }
 
-      setLoading(true);
-      await Promise.all([fetchInventory(), fetchUsageLogs()]);
+      const inventoryData = await fetchInventory();
+      await fetchUsageLogs();
+
+      if (inventoryData.length > 0) {
+        setSelectedItemId((currentId) => {
+          const selectedStillExists = inventoryData.find((item) => item._id === currentId);
+          return selectedStillExists ? currentId : inventoryData[0]._id;
+        });
+      } else {
+        setSelectedItemId("");
+      }
+
       setLoading(false);
     };
 
     initializeApp();
-  }, []);
+  }, [clearAllMessages, fetchInventory, fetchJson, fetchUsageLogs]);
 
   useEffect(() => {
-    if (!globalMessage) return;
-
-    const timer = setTimeout(() => {
-      clearGlobalMessage();
-    }, 3000);
-
+    if (!globalMessage) return undefined;
+    const timer = setTimeout(clearGlobalMessage, 3500);
     return () => clearTimeout(timer);
-  }, [globalMessage]);
+  }, [globalMessage, clearGlobalMessage]);
 
   useEffect(() => {
-    if (!addItemMessage) return;
+    if (!addItemMessage) return undefined;
+    const timer = setTimeout(clearAddItemMessage, 3500);
+    return () => clearTimeout(timer);
+  }, [addItemMessage, clearAddItemMessage]);
 
-    const timer = setTimeout(() => {
+  useEffect(() => {
+    if (!usageMessage) return undefined;
+    const timer = setTimeout(clearUsageMessage, 3500);
+    return () => clearTimeout(timer);
+  }, [usageMessage, clearUsageMessage]);
+
+  const handleEditClick = useCallback(
+    (item) => {
+      setIsEditing(true);
+      setEditingItemId(item._id);
+      setNewItemName(item.itemName || "");
+      setNewStock(String(item.currentStock ?? ""));
+      setNewThreshold(String(item.reorderThreshold ?? ""));
       clearAddItemMessage();
-    }, 3000);
+      showAddItemMessage(`Editing ${item.itemName}`, "success");
+    },
+    [clearAddItemMessage, showAddItemMessage]
+  );
 
-    return () => clearTimeout(timer);
-  }, [addItemMessage]);
-
-  useEffect(() => {
-    if (!usageMessage) return;
-
-    const timer = setTimeout(() => {
-      clearUsageMessage();
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [usageMessage]);
-
-  const handleEditClick = (item) => {
-    setIsEditing(true);
-    setEditingItemId(item._id);
-    setNewItemName(item.itemName || "");
-    setNewStock(String(item.currentStock ?? ""));
-    setNewThreshold(String(item.reorderThreshold ?? ""));
-    clearMessage();
-  };
-
-  const resetItemForm = () => {
+  const resetItemForm = useCallback(() => {
     setIsEditing(false);
     setEditingItemId("");
     setNewItemName("");
     setNewStock("");
     setNewThreshold("");
-  };
+  }, []);
 
-  const handleUsageSubmit = async (e) => {
-    e.preventDefault();
+  const refreshStatus = useCallback(async () => {
+    try {
+      const { response, data } = await fetchJson(`${API_BASE_URL}/api/health`);
+      setBackendConnected(response.ok);
+      setDatabaseConnected(Boolean(data?.database?.connected));
+    } catch {
+      setBackendConnected(false);
+      setDatabaseConnected(false);
+    }
+  }, [fetchJson]);
+
+  const handleUsageSubmit = async (event) => {
+    event.preventDefault();
     clearUsageMessage();
 
     const usedQty = Number(quantityUsed);
 
     if (!selectedItemId) {
-      alert("Please choose an item before submitting.");
       showUsageMessage("Please choose an item before submitting.", "error");
       return;
     }
 
     if (!usageDate || !String(usageDate).trim()) {
-      alert("Please choose the date of use.");
       showUsageMessage("Please choose the date of use.", "error");
       return;
     }
 
     if (quantityUsed === "" || Number.isNaN(usedQty) || usedQty <= 0) {
-      alert("Please enter a quantity greater than 0.");
       showUsageMessage("Please enter a quantity greater than 0.", "error");
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/usage`, {
+      const { response, data } = await fetchJson(`${API_URL}/usage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -242,54 +283,55 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
         })
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        alert(data.message || "Failed to update inventory usage.");
-        showUsageMessage(data.message || "Failed to update inventory usage.", "error");
-        return;
+        throw new Error(data.message || "Failed to update inventory usage.");
       }
 
       showUsageMessage(data.message || "Usage recorded successfully.", "success");
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
-      await Promise.all([fetchInventory(), fetchUsageLogs()]);
+      await Promise.all([refreshStatus(), fetchInventory(), fetchUsageLogs()]);
     } catch (error) {
-      alert("Something went wrong while saving the usage entry.");
-      showUsageMessage("Something went wrong while saving the usage entry.", "error");
+      showUsageMessage(
+        error.message || "Something went wrong while saving the usage entry.",
+        "error"
+      );
+      await refreshStatus();
     }
   };
 
-  const handleAddItem = async (e) => {
-    e.preventDefault();
+  const handleAddItem = async (event) => {
+    event.preventDefault();
     clearAddItemMessage();
 
     const trimmedItemName = newItemName.trim();
     const stockValue = Number(newStock);
     const thresholdValue = Number(newThreshold);
 
-    if (newItemName === "" || trimmedItemName === "") {
-      alert("Please enter an item name.");
+    if (!trimmedItemName) {
       showAddItemMessage("Please enter an item name.", "error");
       return;
     }
 
     if (trimmedItemName.length < 2) {
-      alert("Item name must be at least 2 characters long.");
       showAddItemMessage("Item name must be at least 2 characters long.", "error");
       return;
     }
 
     if (newStock === "" || Number.isNaN(stockValue) || stockValue < 0) {
-      alert("Current stock must be a valid number greater than or equal to 0.");
-      showAddItemMessage("Current stock must be a valid number greater than or equal to 0.", "error");
+      showAddItemMessage(
+        "Current stock must be a valid number greater than or equal to 0.",
+        "error"
+      );
       return;
     }
 
     if (newThreshold === "" || Number.isNaN(thresholdValue) || thresholdValue < 1) {
-      alert("Reorder threshold must be a valid number greater than or equal to 1.");
-      showAddItemMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
+      showAddItemMessage(
+        "Reorder threshold must be a valid number greater than or equal to 1.",
+        "error"
+      );
       return;
     }
 
@@ -297,7 +339,7 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
       const url = isEditing ? `${API_URL}/${editingItemId}` : API_URL;
       const method = isEditing ? "PUT" : "POST";
 
-      const response = await fetch(url, {
+      const { response, data } = await fetchJson(url, {
         method,
         headers: {
           "Content-Type": "application/json"
@@ -309,22 +351,14 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
         })
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        alert(
+        throw new Error(
           data.message ||
             (isEditing ? "Failed to update inventory item." : "Failed to add inventory item.")
         );
-        showMessage(
-          data.message ||
-            (isEditing ? "Failed to update inventory item." : "Failed to add inventory item."),
-          "error"
-        );
-        return;
       }
 
-      showMessage(
+      showAddItemMessage(
         data.message ||
           (isEditing
             ? "Inventory item updated successfully."
@@ -333,155 +367,96 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
       );
 
       resetItemForm();
-      await fetchInventory();
+      await Promise.all([refreshStatus(), fetchInventory()]);
     } catch (error) {
-      alert(isEditing ? "Server error while updating item." : "Server error while adding item.");
-      showMessage(
-        isEditing ? "Server error while updating item." : "Server error while adding item.",
+      showAddItemMessage(
+        error.message ||
+          (isEditing ? "Server error while updating item." : "Server error while adding item."),
         "error"
       );
+      await refreshStatus();
     }
   };
 
-  const lowStockItems = useMemo(() => {
-    return inventory.filter((item) => item.currentStock <= item.reorderThreshold);
-  }, [inventory]);
+  const lowStockItems = useMemo(
+    () => inventory.filter((item) => item.currentStock <= item.reorderThreshold),
+    [inventory]
+  );
 
-  const highRiskItems = useMemo(() => {
-    return inventory.filter((item) => item.riskLevel === "High");
-  }, [inventory]);
+  const highRiskItems = useMemo(
+    () => inventory.filter((item) => item.riskLevel === "High"),
+    [inventory]
+  );
 
-  const itemsByRiskLevel = useMemo(() => {
-    return {
+  const itemsByRiskLevel = useMemo(
+    () => ({
       High: inventory.filter((item) => item.riskLevel === "High"),
       Medium: inventory.filter((item) => item.riskLevel === "Medium"),
       Low: inventory.filter((item) => item.riskLevel === "Low")
-    };
-  }, [inventory]);
+    }),
+    [inventory]
+  );
 
   const totalItems = inventory.length;
 
-  const totalUnitsRemaining = useMemo(() => {
-    return inventory.reduce((sum, item) => sum + item.currentStock, 0);
-  }, [inventory]);
+  const totalUnitsRemaining = useMemo(
+    () => inventory.reduce((sum, item) => sum + item.currentStock, 0),
+    [inventory]
+  );
 
-  const reportDate = new Date().toISOString().slice(0, 10);
-
-  const downloadCSV = () => {
-    const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const rows = [];
-
-    rows.push(["Inventory Report"]);
-    rows.push(["Generated", reportDate]);
-    rows.push([]);
-    rows.push(["Summary"]);
-    rows.push(["Total Inventory Items", totalItems]);
-    rows.push(["Units Remaining", totalUnitsRemaining]);
-    rows.push(["Low Stock Alerts", lowStockItems.length]);
-    rows.push(["High Risk Items", highRiskItems.length]);
-    rows.push([]);
-    rows.push(["Inventory Overview"]);
-    rows.push(["Item Name", "Stock Level", "Risk Level", "Threshold", "Used"]);
-    inventory.forEach((item) => {
-      rows.push([
-        item.itemName,
-        item.currentStock,
-        item.riskLevel,
-        item.reorderThreshold,
-        item.totalUsed ?? 0
-      ]);
-    });
-    rows.push([]);
-    rows.push(["Inventory Usage Log"]);
-    rows.push(["Item Name", "Quantity Used", "Date", "Remaining Stock", "Risk Level"]);
-    usageLogs.forEach((log) => {
-      rows.push([
-        log.itemName,
-        log.quantityUsed,
-        log.usageDate || "N/A",
-        log.remainingStock ?? "",
-        log.riskLevel
-      ]);
-    });
-
-    const csvContent = rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const filename = `inventory-report-${reportDate}.csv`;
-    const link = document.createElement("a");
-
-    if (navigator.msSaveBlob) {
-      navigator.msSaveBlob(blob, filename);
-    } else {
-      const url = URL.createObjectURL(blob);
-      link.href = url;
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  const downloadPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Inventory Report", 14, 18);
-    doc.setFontSize(11);
-    doc.text(`Generated: ${reportDate}`, 14, 26);
-    doc.text(`Total Items: ${totalItems}`, 14, 34);
-    doc.text(`Units Remaining: ${totalUnitsRemaining}`, 14, 40);
-    doc.text(`Low Stock Alerts: ${lowStockItems.length}`, 14, 46);
-    doc.text(`High Risk Items: ${highRiskItems.length}`, 14, 52);
-
-    doc.autoTable({
-      startY: 60,
-      head: [["Item Name", "Stock", "Risk", "Threshold", "Used"]],
-      body: inventory.map((item) => [
-        item.itemName,
-        item.currentStock,
-        item.riskLevel,
-        item.reorderThreshold,
-        item.totalUsed ?? 0
-      ]),
-      theme: "grid",
-      headStyles: { fillColor: [23, 59, 143], textColor: 255 },
-      styles: { fontSize: 9, cellPadding: 3 }
-    });
-
-    if (usageLogs.length > 0) {
-      doc.addPage();
-      doc.autoTable({
-        startY: 14,
-        head: [["Item Name", "Quantity Used", "Date", "Remaining Stock", "Risk Level"]],
-        body: usageLogs.map((log) => [
-          log.itemName,
-          log.quantityUsed,
-          log.usageDate || "N/A",
-          log.remainingStock ?? "",
-          log.riskLevel
-        ]),
-        theme: "grid",
-        headStyles: { fillColor: [23, 59, 143], textColor: 255 },
-        styles: { fontSize: 9, cellPadding: 3 }
-      });
+  const activeBanner = useMemo(() => {
+    if (addItemMessage) {
+      return {
+        message: addItemMessage,
+        type: addItemMessageType,
+        onClose: clearAddItemMessage
+      };
     }
 
-    doc.save(`inventory-report-${reportDate}.pdf`);
-  };
+    if (usageMessage) {
+      return {
+        message: usageMessage,
+        type: usageMessageType,
+        onClose: clearUsageMessage
+      };
+    }
+
+    if (globalMessage) {
+      return {
+        message: globalMessage,
+        type: globalMessageType,
+        onClose: clearGlobalMessage
+      };
+    }
+
+    return { message: "", type: "", onClose: () => {} };
+  }, [
+    addItemMessage,
+    addItemMessageType,
+    clearAddItemMessage,
+    clearGlobalMessage,
+    clearUsageMessage,
+    globalMessage,
+    globalMessageType,
+    usageMessage,
+    usageMessageType
+  ]);
 
   return (
     <div className="app-shell">
+      <ConfirmationBanner
+        message={activeBanner.message}
+        type={activeBanner.type}
+        onClose={activeBanner.onClose}
+        autoCloseDuration={activeBanner.type === "success" ? 4000 : 5000}
+      />
+
       <nav className="topbar">
         <div className="brand-group">
           <div>
             <h1 className="brand">StockGuard</h1>
             <p className="brand-subtitle">Inventory Risk Monitoring Dashboard</p>
           </div>
-        </div>
-
-        <div className="topbar-actions">
-          <button type="button" onClick={downloadCSV}>Export CSV</button>
-          <button type="button" onClick={downloadPDF}>Export PDF</button>
         </div>
       </nav>
 
@@ -496,12 +471,6 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
             </p>
           </div>
         </section>
-{globalMessage && (
-  <div className={`status-message ${globalMessageType}`}>
-    {globalMessage}
-  </div>
-)}
-        
 
         <Report
           inventory={inventory}
@@ -511,6 +480,8 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
           itemsByRiskLevel={itemsByRiskLevel}
           totalItems={totalItems}
           totalUnitsRemaining={totalUnitsRemaining}
+          onEditItem={handleEditClick}
+          formatUsageDate={formatUsageDate}
         />
 
         <section className="content-grid">
@@ -526,16 +497,10 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                 <input
                   type="text"
                   value={newItemName}
-                  onChange={(e) => {
-                    setNewItemName(e.target.value);
+                  onChange={(event) => {
+                    setNewItemName(event.target.value);
                     if (addItemMessageType === "error") {
                       clearAddItemMessage();
-                    }
-                  }}
-                  onBlur={() => {
-                    if (!newItemName.trim()) {
-                      alert("Please enter an item name.");
-                      showAddItemMessage("Please enter an item name.", "error");
                     }
                   }}
                   placeholder="Enter item name"
@@ -548,7 +513,7 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                   type="number"
                   min="0"
                   value={newStock}
-                  onChange={(e) => setNewStock(e.target.value)}
+                  onChange={(event) => setNewStock(event.target.value)}
                   placeholder="Enter current stock"
                 />
               </label>
@@ -559,7 +524,7 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                   type="number"
                   min="1"
                   value={newThreshold}
-                  onChange={(e) => setNewThreshold(e.target.value)}
+                  onChange={(event) => setNewThreshold(event.target.value)}
                   placeholder="Enter reorder threshold"
                 />
               </label>
@@ -568,7 +533,13 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                 <button type="submit">{isEditing ? "Update Item" : "Add Item"}</button>
 
                 {isEditing && (
-                  <button type="button" onClick={resetItemForm}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetItemForm();
+                      clearAddItemMessage();
+                    }}
+                  >
                     Cancel
                   </button>
                 )}
@@ -585,7 +556,10 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
             <form onSubmit={handleUsageSubmit} className="usage-form">
               <label>
                 Select Item
-                <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}>
+                <select
+                  value={selectedItemId}
+                  onChange={(event) => setSelectedItemId(event.target.value)}
+                >
                   <option value="">Select an item</option>
                   {inventory.map((item) => (
                     <option key={item._id} value={item._id}>
@@ -601,27 +575,24 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                   type="number"
                   min="1"
                   value={quantityUsed}
-                  onChange={(e) => setQuantityUsed(e.target.value)}
+                  onChange={(event) => setQuantityUsed(event.target.value)}
                   placeholder="Enter quantity used"
                 />
               </label>
 
               <label>
                 Date
-                <input type="date" value={usageDate} onChange={(e) => setUsageDate(e.target.value)} />
+                <input
+                  type="date"
+                  value={usageDate}
+                  onChange={(event) => setUsageDate(event.target.value)}
+                />
               </label>
 
               <button type="submit">Submit Usage</button>
             </form>
           </div>
         </section>
-
-        <ConfirmationBanner 
-          message={message} 
-          type={messageType} 
-          onClose={clearMessage}
-          autoCloseDuration={messageType === "success" ? 4000 : 5000}
-        />
 
         <section className="content-grid">
           <div className="panel glass-panel">
@@ -648,10 +619,7 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
                         Reorder Threshold: <strong>{item.reorderThreshold}</strong>
                       </p>
                       <p>
-                        Status:{" "}
-                        <strong>
-                          {item.currentStock <= item.reorderThreshold ? "Alert Triggered" : "Normal"}
-                        </strong>
+                        Status: <strong>Alert Triggered</strong>
                       </p>
                     </div>
                     <span className={`risk-badge ${getRiskDisplayClass(item.riskLevel)}`}>
@@ -673,19 +641,22 @@ const API_URL = `${API_BASE_URL}/api/inventory`;
               <h3>
                 {loading
                   ? "Loading..."
-                  : backendConnected
-                  ? "Backend Connected"
-                  : "Backend Not Connected"}
+                  : !backendConnected
+                  ? "Backend Not Connected"
+                  : databaseConnected
+                  ? "Backend and MongoDB Connected"
+                  : "Backend Connected, MongoDB Not Connected"}
               </h3>
               <p>
-                {backendConnected
+                {!backendConnected
+                  ? "The frontend cannot reach the Express server. Make sure the backend is running on port 5000."
+                  : databaseConnected
                   ? "Inventory is synchronized with MongoDB."
-                  : "Backend server is not reachable."}
+                  : "The server is up, but MongoDB is disconnected. Start MongoDB or fix MONGO_URI to use inventory features."}
               </p>
             </div>
           </div>
         </section>
-
       </main>
     </div>
   );

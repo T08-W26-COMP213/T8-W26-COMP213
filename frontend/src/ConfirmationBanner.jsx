@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import "./ConfirmationBanner.css";
 
-export default function ConfirmationBanner({ message, type, onClose, autoCloseDuration = 4000 }) {
+export default function ConfirmationBanner({
+  message,
+  type,
+  onClose = () => {},
+  autoCloseDuration = 4000
+}) {
   useEffect(() => {
     if (message && autoCloseDuration > 0) {
       const timer = setTimeout(() => {
@@ -10,6 +15,8 @@ export default function ConfirmationBanner({ message, type, onClose, autoCloseDu
 
       return () => clearTimeout(timer);
     }
+
+    return undefined;
   }, [message, autoCloseDuration, onClose]);
 
   if (!message) return null;

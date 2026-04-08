@@ -14,11 +14,29 @@ function calculateRiskLevel(stock, threshold) {
 function calculateConsumptionRate(totalUsed, createdAt) {
   const createdDate = new Date(createdAt);
   const today = new Date();
-
   const diffTime = today - createdDate;
   const diffDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
 
   return Number((totalUsed / diffDays).toFixed(2));
+}
+
+function validateInventoryPayload(itemName, currentStock, reorderThreshold) {
+  if (!itemName || !String(itemName).trim()) {
+    return "Item name is required";
+  }
+
+  const stock = Number(currentStock);
+  const threshold = Number(reorderThreshold);
+
+  if (Number.isNaN(stock) || stock < 0) {
+    return "Current stock must be a valid number >= 0";
+  }
+
+  if (Number.isNaN(threshold) || threshold < 1) {
+    return "Reorder threshold must be a valid number >= 1";
+  }
+
+  return null;
 }
 
 router.get("/", async (req, res) => {
@@ -36,30 +54,17 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { itemName, currentStock, reorderThreshold } = req.body;
+    const validationError = validateInventoryPayload(itemName, currentStock, reorderThreshold);
 
-    if (!itemName || !itemName.trim()) {
-      return res.status(400).json({
-        message: "Item name is required"
-      });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const stock = Number(currentStock);
     const threshold = Number(reorderThreshold);
 
-    if (Number.isNaN(stock) || stock < 0) {
-      return res.status(400).json({
-        message: "Current stock must be a valid number >= 0"
-      });
-    }
-
-    if (Number.isNaN(threshold) || threshold < 1) {
-      return res.status(400).json({
-        message: "Reorder threshold must be a valid number >= 1"
-      });
-    }
-
     const newItem = new Inventory({
-      itemName: itemName.trim(),
+      itemName: String(itemName).trim(),
       currentStock: stock,
       reorderThreshold: threshold,
       totalUsed: 0,
@@ -82,6 +87,52 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { itemName, currentStock, reorderThreshold } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid item ID" });
+    }
+
+    const validationError = validateInventoryPayload(itemName, currentStock, reorderThreshold);
+
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
+
+    const stock = Number(currentStock);
+    const threshold = Number(reorderThreshold);
+
+    const item = await Inventory.findById(id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    item.itemName = String(itemName).trim();
+    item.currentStock = stock;
+    item.reorderThreshold = threshold;
+    item.riskLevel = calculateRiskLevel(stock, threshold);
+    item.totalUsed = Math.max(Number(item.totalUsed) || 0, 0);
+    item.consumptionRate = calculateConsumptionRate(item.totalUsed, item.createdAt);
+
+    const updatedItem = await item.save();
+
+    res.json({
+      message: "Inventory item updated successfully",
+      item: updatedItem
+    });
+  } catch (error) {
+    console.error("Update item error:", error);
+    res.status(400).json({
+      message: "Failed to update inventory item",
+      error: error.message
+    });
+  }
+});
+
 router.get("/logs", async (req, res) => {
   try {
     const logs = await UsageLog.find().sort({ createdAt: -1 });
@@ -99,15 +150,11 @@ router.post("/usage", async (req, res) => {
     let { itemId, quantityUsed, usageDate } = req.body;
 
     if (!itemId) {
-      return res.status(400).json({
-        message: "Item ID is required"
-      });
+      return res.status(400).json({ message: "Item ID is required" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(itemId)) {
-      return res.status(400).json({
-        message: "Invalid item ID"
-      });
+      return res.status(400).json({ message: "Invalid item ID" });
     }
 
     quantityUsed = Number(quantityUsed);
@@ -119,9 +166,7 @@ router.post("/usage", async (req, res) => {
     }
 
     if (!usageDate || !String(usageDate).trim()) {
-      return res.status(400).json({
-        message: "Usage date is required"
-      });
+      return res.status(400).json({ message: "Usage date is required" });
     }
 
     const normalizedUsageDate = String(usageDate).trim().split("T")[0];
@@ -135,9 +180,7 @@ router.post("/usage", async (req, res) => {
     const item = await Inventory.findById(itemId);
 
     if (!item) {
-      return res.status(404).json({
-        message: "Item not found"
-      });
+      return res.status(404).json({ message: "Item not found" });
     }
 
     if (quantityUsed > item.currentStock) {

@@ -5,7 +5,9 @@ function Report({
   highRiskItems,
   itemsByRiskLevel,
   totalItems,
-  totalUnitsRemaining
+  totalUnitsRemaining,
+  onEditItem,
+  formatUsageDate
 }) {
   return (
     <>
@@ -142,7 +144,7 @@ function Report({
                   <tr key={log._id}>
                     <td>{log.itemName}</td>
                     <td>{log.quantityUsed}</td>
-                    <td>{log.usageDate || "N/A"}</td>
+                    <td>{formatUsageDate(log.usageDate)}</td>
                     <td>{log.remainingStock}</td>
                     <td>
                       <span className={`risk-badge ${log.riskLevel.toLowerCase()}`}>
