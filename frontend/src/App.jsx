@@ -12,6 +12,7 @@ function App() {
   const [quantityUsed, setQuantityUsed] = useState("");
   const [usageDate, setUsageDate] = useState(new Date().toISOString().split("T")[0]);
   const [usageLogs, setUsageLogs] = useState([]);
+<<<<<<< Updated upstream
 
   const [globalMessage, setGlobalMessage] = useState("");
   const [globalMessageType, setGlobalMessageType] = useState("");
@@ -20,6 +21,11 @@ function App() {
   const [usageMessage, setUsageMessage] = useState("");
   const [usageMessageType, setUsageMessageType] = useState("");
 
+=======
+  const [systemActivityLogs, setSystemActivityLogs] = useState([]);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+>>>>>>> Stashed changes
   const [loading, setLoading] = useState(true);
   const [backendConnected, setBackendConnected] = useState(false);
   const [databaseConnected, setDatabaseConnected] = useState(false);
@@ -40,6 +46,7 @@ function App() {
     setGlobalMessageType("");
   }, []);
 
+<<<<<<< Updated upstream
   const showAddItemMessage = useCallback((text, type = "error") => {
     setAddItemMessage(text);
     setAddItemMessageType(type);
@@ -94,6 +101,20 @@ function App() {
   }, []);
 
   const getRiskDisplayName = useCallback((riskLevel) => {
+=======
+  const addSystemLog = (level, logMessage) => {
+    const newLog = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toLocaleString(),
+      level,
+      message: logMessage
+    };
+
+    setSystemActivityLogs((prevLogs) => [newLog, ...prevLogs].slice(0, 50));
+  };
+
+  const getRiskDisplayName = (riskLevel) => {
+>>>>>>> Stashed changes
     if (riskLevel === "High") return "Critical";
     if (riskLevel === "Medium") return "At Risk";
     return "Safe";
@@ -105,6 +126,7 @@ function App() {
     return "low";
   }, []);
 
+<<<<<<< Updated upstream
  const formatUsageDate = useCallback((value) => {
   if (!value) return "";
 
@@ -134,6 +156,15 @@ function App() {
 }, []);
 
   const fetchInventory = useCallback(async () => {
+=======
+  const getLogLevelClass = (level) => {
+    if (level === "ERROR") return "high";
+    if (level === "WARN") return "medium";
+    return "low";
+  };
+
+  const fetchInventory = async () => {
+>>>>>>> Stashed changes
     try {
       const { response, data } = await fetchJson(API_URL);
 
@@ -144,9 +175,14 @@ function App() {
       setInventory(Array.isArray(data) ? data : []);
       return Array.isArray(data) ? data : [];
     } catch (error) {
+<<<<<<< Updated upstream
       setInventory([]);
       showGlobalMessage(error.message || "Failed to load inventory data.", "error");
       return [];
+=======
+      showMessage("Failed to load inventory data.", "error");
+      addSystemLog("ERROR", "Failed to load inventory data.");
+>>>>>>> Stashed changes
     }
   }, [fetchJson, showGlobalMessage]);
 
@@ -161,15 +197,21 @@ function App() {
       setUsageLogs(Array.isArray(data) ? data : []);
       return Array.isArray(data) ? data : [];
     } catch (error) {
+<<<<<<< Updated upstream
       setUsageLogs([]);
       showGlobalMessage(error.message || "Failed to load usage logs.", "error");
       return [];
+=======
+      showMessage("Failed to load usage logs.", "error");
+      addSystemLog("ERROR", "Failed to load usage logs.");
+>>>>>>> Stashed changes
     }
   }, [fetchJson, showGlobalMessage]);
 
   useEffect(() => {
     const initializeApp = async () => {
       setLoading(true);
+<<<<<<< Updated upstream
       clearAllMessages();
 
       try {
@@ -193,7 +235,26 @@ function App() {
         setSelectedItemId("");
       }
 
+=======
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/health`);
+        setBackendConnected(res.ok);
+
+        if (res.ok) {
+          addSystemLog("INFO", "Backend connected successfully.");
+        } else {
+          addSystemLog("WARN", "Backend health check returned a non-success status.");
+        }
+      } catch (error) {
+        setBackendConnected(false);
+        addSystemLog("ERROR", "Backend server is not reachable.");
+      }
+
+      await Promise.all([fetchInventory(), fetchUsageLogs()]);
+>>>>>>> Stashed changes
       setLoading(false);
+      addSystemLog("INFO", "System initialization completed.");
     };
 
     initializeApp();
@@ -205,11 +266,23 @@ function App() {
     return () => clearTimeout(timer);
   }, [globalMessage, clearGlobalMessage]);
 
+<<<<<<< Updated upstream
   useEffect(() => {
     if (!addItemMessage) return undefined;
     const timer = setTimeout(clearAddItemMessage, 3500);
     return () => clearTimeout(timer);
   }, [addItemMessage, clearAddItemMessage]);
+=======
+  const handleEditClick = (item) => {
+    setIsEditing(true);
+    setEditingItemId(item._id);
+    setNewItemName(item.itemName || "");
+    setNewStock(String(item.currentStock ?? ""));
+    setNewThreshold(String(item.reorderThreshold ?? ""));
+    clearMessage();
+    addSystemLog("INFO", `Editing inventory item: ${item.itemName}.`);
+  };
+>>>>>>> Stashed changes
 
   useEffect(() => {
     if (!usageMessage) return undefined;
@@ -256,17 +329,35 @@ function App() {
     const usedQty = Number(quantityUsed);
 
     if (!selectedItemId) {
+<<<<<<< Updated upstream
       showUsageMessage("Please choose an item before submitting.", "error");
+=======
+      alert("Please choose an item before submitting.");
+      showMessage("Please choose an item before submitting.", "error");
+      addSystemLog("WARN", "Usage submission blocked: no item selected.");
+>>>>>>> Stashed changes
       return;
     }
 
     if (!usageDate || !String(usageDate).trim()) {
+<<<<<<< Updated upstream
       showUsageMessage("Please choose the date of use.", "error");
+=======
+      alert("Please choose the date of use.");
+      showMessage("Please choose the date of use.", "error");
+      addSystemLog("WARN", "Usage submission blocked: no usage date selected.");
+>>>>>>> Stashed changes
       return;
     }
 
     if (quantityUsed === "" || Number.isNaN(usedQty) || usedQty <= 0) {
+<<<<<<< Updated upstream
       showUsageMessage("Please enter a quantity greater than 0.", "error");
+=======
+      alert("Please enter a quantity greater than 0.");
+      showMessage("Please enter a quantity greater than 0.", "error");
+      addSystemLog("WARN", "Usage submission blocked: invalid quantity.");
+>>>>>>> Stashed changes
       return;
     }
 
@@ -284,20 +375,38 @@ function App() {
       });
 
       if (!response.ok) {
+<<<<<<< Updated upstream
         throw new Error(data.message || "Failed to update inventory usage.");
       }
 
       showUsageMessage(data.message || "Usage recorded successfully.", "success");
+=======
+        const errorMessage = data.message || "Failed to update inventory usage.";
+        alert(errorMessage);
+        showMessage(errorMessage, "error");
+        addSystemLog("ERROR", errorMessage);
+        return;
+      }
+
+      showMessage(data.message || "Usage recorded successfully.", "success");
+      addSystemLog("INFO", `Usage recorded successfully. Quantity used: ${usedQty}.`);
+>>>>>>> Stashed changes
       setQuantityUsed("");
       setUsageDate(new Date().toISOString().split("T")[0]);
 
       await Promise.all([refreshStatus(), fetchInventory(), fetchUsageLogs()]);
     } catch (error) {
+<<<<<<< Updated upstream
       showUsageMessage(
         error.message || "Something went wrong while saving the usage entry.",
         "error"
       );
       await refreshStatus();
+=======
+      alert("Something went wrong while saving the usage entry.");
+      showMessage("Something went wrong while saving the usage entry.", "error");
+      addSystemLog("ERROR", "Something went wrong while saving the usage entry.");
+>>>>>>> Stashed changes
     }
   };
 
@@ -309,29 +418,54 @@ function App() {
     const stockValue = Number(newStock);
     const thresholdValue = Number(newThreshold);
 
+<<<<<<< Updated upstream
     if (!trimmedItemName) {
       showAddItemMessage("Please enter an item name.", "error");
+=======
+    if (!newItemName || !trimmedItemName) {
+      alert("Please enter an item name.");
+      showMessage("Please enter an item name.", "error");
+      addSystemLog("WARN", "Add item blocked: item name was missing.");
+>>>>>>> Stashed changes
       return;
     }
 
     if (trimmedItemName.length < 2) {
+<<<<<<< Updated upstream
       showAddItemMessage("Item name must be at least 2 characters long.", "error");
+=======
+      alert("Item name must be at least 2 characters long.");
+      showMessage("Item name must be at least 2 characters long.", "error");
+      addSystemLog("WARN", "Add item blocked: item name too short.");
+>>>>>>> Stashed changes
       return;
     }
 
     if (newStock === "" || Number.isNaN(stockValue) || stockValue < 0) {
+<<<<<<< Updated upstream
       showAddItemMessage(
         "Current stock must be a valid number greater than or equal to 0.",
         "error"
       );
+=======
+      alert("Current stock must be a valid number greater than or equal to 0.");
+      showMessage("Current stock must be a valid number greater than or equal to 0.", "error");
+      addSystemLog("WARN", "Add item blocked: invalid current stock value.");
+>>>>>>> Stashed changes
       return;
     }
 
     if (newThreshold === "" || Number.isNaN(thresholdValue) || thresholdValue < 1) {
+<<<<<<< Updated upstream
       showAddItemMessage(
         "Reorder threshold must be a valid number greater than or equal to 1.",
         "error"
       );
+=======
+      alert("Reorder threshold must be a valid number greater than or equal to 1.");
+      showMessage("Reorder threshold must be a valid number greater than or equal to 1.", "error");
+      addSystemLog("WARN", "Add item blocked: invalid reorder threshold value.");
+>>>>>>> Stashed changes
       return;
     }
 
@@ -352,10 +486,20 @@ function App() {
       });
 
       if (!response.ok) {
+<<<<<<< Updated upstream
         throw new Error(
           data.message ||
             (isEditing ? "Failed to update inventory item." : "Failed to add inventory item.")
         );
+=======
+        const errorMessage =
+          data.message ||
+          (isEditing ? "Failed to update inventory item." : "Failed to add inventory item.");
+        alert(errorMessage);
+        showMessage(errorMessage, "error");
+        addSystemLog("ERROR", errorMessage);
+        return;
+>>>>>>> Stashed changes
       }
 
       showAddItemMessage(
@@ -366,9 +510,17 @@ function App() {
         "success"
       );
 
+      addSystemLog(
+        "INFO",
+        isEditing
+          ? `Inventory item updated: ${trimmedItemName}.`
+          : `Inventory item added: ${trimmedItemName}.`
+      );
+
       resetItemForm();
       await Promise.all([refreshStatus(), fetchInventory()]);
     } catch (error) {
+<<<<<<< Updated upstream
       showAddItemMessage(
         error.message ||
           (isEditing ? "Server error while updating item." : "Server error while adding item."),
@@ -382,12 +534,30 @@ function App() {
     () => inventory.filter((item) => item.currentStock <= item.reorderThreshold),
     [inventory]
   );
+=======
+      const errorMessage = isEditing
+        ? "Server error while updating item."
+        : "Server error while adding item.";
+      alert(errorMessage);
+      showMessage(errorMessage, "error");
+      addSystemLog("ERROR", errorMessage);
+    }
+  };
+
+  const handleExportReport = () => {
+    if (!usageLogs || usageLogs.length === 0) {
+      showMessage("No usage report data available to export.", "error");
+      addSystemLog("WARN", "Export blocked because no usage report data was available.");
+      return;
+    }
+>>>>>>> Stashed changes
 
   const highRiskItems = useMemo(
     () => inventory.filter((item) => item.riskLevel === "High"),
     [inventory]
   );
 
+<<<<<<< Updated upstream
   const itemsByRiskLevel = useMemo(
     () => ({
       High: inventory.filter((item) => item.riskLevel === "High"),
@@ -663,3 +833,33 @@ function App() {
 }
 
 export default App;
+=======
+    const rows = usageLogs.map((log) => [
+      log.itemName ?? "",
+      log.quantityUsed ?? "",
+      log.usageDate ? new Date(log.usageDate).toLocaleDateString() : "",
+      getRiskDisplayName(log.riskLevel) ?? ""
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `inventory-usage-report-${new Date().toISOString().split("T")[0]}.csv`
+    );
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+   
+>>>>>>> Stashed changes
