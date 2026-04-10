@@ -6,6 +6,9 @@ import ExportReport from "./ExportReport";
 import ReportDashboard from "./ReportDashboard";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import AddUserForm from "./AddUserForm";
+import ConfirmationBanner from "./ConfirmationBanner";
+import Report from "./Report";
+
 function App() {
   const API_BASE_URL = "http://localhost:5000";
   const API_URL = `${API_BASE_URL}/api/inventory`;
@@ -644,6 +647,15 @@ useEffect(() => {
             </div>
           </div>
         </section>
+        <Report
+          inventory={inventory}
+          usageLogs={usageLogs}
+          lowStockItems={lowStockItems}
+          highRiskItems={highRiskItems}
+          itemsByRiskLevel={itemsByRiskLevel}
+          totalItems={totalItems}
+          totalUnitsRemaining={totalUnitsRemaining}
+        />
 
         <section className="content-grid">
           <div className="panel glass-panel">
@@ -751,6 +763,13 @@ useEffect(() => {
             </form>
           </div>
         </section>
+
+        <ConfirmationBanner 
+          message={message} 
+          type={messageType} 
+          onClose={clearMessage}
+          autoCloseDuration={messageType === "success" ? 4000 : 5000}
+        />
 
         <section className="content-grid">
           <div className="panel glass-panel">

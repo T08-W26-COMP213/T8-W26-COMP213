@@ -5,6 +5,7 @@ function ReportGenerationLayout() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [generated, setGenerated] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleGenerateReport = (e) => {
     e.preventDefault();
@@ -20,6 +21,9 @@ function ReportGenerationLayout() {
     }
 
     setGenerated(true);
+
+    const fileName = `${reportType}_${startDate}_to_${endDate}.csv`;
+    setMessage(`Report exported successfully: ${fileName}`);
   };
 
   return (
@@ -72,6 +76,11 @@ function ReportGenerationLayout() {
 
             <button type="submit">Generate Report</button>
           </form>
+          {message && (
+            <div className="status-message success" style={{ marginTop: "10px" }}>
+                {message}
+            </div>
+            )}
         </div>
 
         <div className="report-preview-card">
