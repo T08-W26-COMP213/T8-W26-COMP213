@@ -442,7 +442,12 @@ useEffect(() => {
           </div>
         </section>
 
-<InventoryRiskLayout />
+<InventoryRiskLayout
+  inventory={inventory}
+  loading={loading}
+  backendConnected={backendConnected}
+  fetchInventory={fetchInventory}
+/>
 
 <InventoryDashboardLayout
   inventory={inventory}
