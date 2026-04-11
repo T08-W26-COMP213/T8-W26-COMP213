@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 function Report({
   inventory,
   usageLogs,
@@ -9,6 +11,8 @@ function Report({
   onEditItem,
   formatUsageDate
 }) {
+  const [selectedLevel, setSelectedLevel] = useState("ALL");
+  
   const topUsageItems = [...inventory]
     .sort((a, b) => (b.totalUsed || 0) - (a.totalUsed || 0))
     .slice(0, 5);
@@ -37,6 +41,17 @@ function Report({
     }
     return value || "N/A";
   };
+  const filteredLogs = usageLogs.filter((log) => {
+  if (selectedLevel === "ALL") return true;
+
+  const levelMap = {
+    Low: "INFO",
+    Medium: "WARN",
+    High: "ERROR"
+  };
+
+  return levelMap[log.riskLevel] === selectedLevel;
+});
 
   return (
     <>
@@ -235,6 +250,16 @@ function Report({
       <section className="table-panel">
         <div className="panel-header">
           <h2>Inventory Usage Log</h2>
+          <select
+  value={selectedLevel}
+  onChange={(e) => setSelectedLevel(e.target.value)}
+  style={{ marginBottom: "10px" }}
+>
+  <option value="ALL">All</option>
+  <option value="INFO">INFO</option>
+  <option value="WARN">WARN</option>
+  <option value="ERROR">ERROR</option>
+</select>
           <span className="panel-tag">Submission History</span>
         </div>
 
@@ -256,7 +281,7 @@ function Report({
                   <td colSpan="5">No usage records submitted yet.</td>
                 </tr>
               ) : (
-                usageLogs.map((log) => (
+                filteredLogs.map((log) => (
                   <tr key={log._id}>
                     <td>{log.itemName}</td>
                     <td>{log.quantityUsed}</td>
