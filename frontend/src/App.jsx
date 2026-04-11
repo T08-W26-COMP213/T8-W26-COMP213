@@ -8,6 +8,7 @@ import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import AddUserForm from "./AddUserForm";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
+import SystemConfigurationLayout from "./SystemConfigurationLayout";
 
 function App() {
   const API_BASE_URL = "http://localhost:5000";
@@ -456,6 +457,8 @@ useEffect(() => {
 />
 
 <UserAccountManagementLayout />
+
+<SystemConfigurationLayout />
 
 <ExportReport inventory={inventory} />
 
