@@ -1,0 +1,300 @@
+.risk-settings-panel {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+}
+
+.risk-settings-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.risk-settings-panel .panel-header h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.risk-settings-panel .panel-tag {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(59, 130, 246, 0.14));
+  color: #1d4ed8;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.risk-settings-description {
+  margin-top: 8px;
+  margin-bottom: 20px;
+  color: #5f6f8f;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.risk-settings-loading {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-top: 12px;
+}
+
+.risk-settings-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 18px;
+  margin: 24px 0;
+}
+
+.risk-preview-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.risk-preview-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.1);
+}
+
+.risk-preview-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.38), transparent 45%);
+  pointer-events: none;
+}
+
+.risk-preview-card.high {
+  border-left: 6px solid #ef4444;
+}
+
+.risk-preview-card.medium {
+  border-left: 6px solid #f59e0b;
+}
+
+.risk-preview-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.risk-preview-card strong {
+  font-size: 1.7rem;
+  line-height: 1.2;
+  color: #1e293b;
+}
+
+.risk-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.risk-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 22px;
+  margin-top: 8px;
+}
+
+.risk-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.risk-input-group label {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #24324a;
+  text-align: center;
+}
+
+.risk-slider {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  border: none;
+}
+
+.high-slider {
+  background: linear-gradient(90deg, #fecaca, #ef4444);
+}
+
+.medium-slider {
+  background: linear-gradient(90deg, #fde68a, #f59e0b);
+}
+
+.risk-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #5b7cfa;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(91, 124, 250, 0.35);
+}
+
+.risk-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #5b7cfa;
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(91, 124, 250, 0.35);
+  cursor: pointer;
+}
+
+.risk-input-group input[type="number"] {
+  height: 58px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: left;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.risk-input-group input[type="number"]:focus {
+  border-color: #6d8df7;
+  box-shadow:
+    0 0 0 4px rgba(109, 141, 247, 0.14),
+    0 8px 18px rgba(109, 141, 247, 0.1);
+}
+
+.risk-input-group small {
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.risk-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.save-settings-button {
+  min-width: 170px;
+  height: 52px;
+  border: none;
+  border-radius: 18px;
+  padding: 0 24px;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: white;
+  cursor: pointer;
+  background: linear-gradient(135deg, #5b7cfa, #7b92ff);
+  box-shadow: 0 12px 28px rgba(91, 124, 250, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.save-settings-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(91, 124, 250, 0.35);
+}
+
+.save-settings-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.risk-settings-message {
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  animation: fadeInUp 0.25s ease;
+}
+
+.risk-settings-message.success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+}
+
+.risk-settings-message.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .risk-settings-preview,
+  .risk-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-settings-panel .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .risk-settings-panel .panel-header h2 {
+    font-size: 1.8rem;
+  }
+
+  .risk-preview-card strong {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .risk-settings-panel {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+
+  .risk-settings-actions {
+    justify-content: stretch;
+  }
+
+  .save-settings-button {
+    width: 100%;
+  }
+
+  .risk-input-group input[type="number"] {
+    font-size: 1.2rem;
+    height: 52px;
+  }
+}

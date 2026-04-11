@@ -26,6 +26,21 @@ const systemSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 5
     },
+
+    // 🔥 NEW (Task #112)
+    riskSettings: {
+      highRiskPercentage: {
+        type: Number,
+        default: 50,
+        min: 1
+      },
+      mediumRiskPercentage: {
+        type: Number,
+        default: 100,
+        min: 1
+      }
+    },
+
     autoRiskCalculation: {
       type: Boolean,
       default: true
