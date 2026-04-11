@@ -2,12 +2,26 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Inventory = require("../models/Inventory");
 const UsageLog = require("../models/UsageLog");
+const SystemSettings = require("../models/SystemSettings");
 
 const router = express.Router();
 
-function calculateRiskLevel(stock, threshold) {
-  if (stock <= threshold * 0.5) return "High";
-  if (stock <= threshold) return "Medium";
+async function calculateRiskLevel(stock, threshold) {
+  let settings = await SystemSettings.findOne();
+
+  if (!settings) {
+    settings = new SystemSettings();
+    await settings.save();
+  }
+
+  const highRiskPercentage = settings.riskSettings?.highRiskPercentage ?? 50;
+  const mediumRiskPercentage = settings.riskSettings?.mediumRiskPercentage ?? 100;
+
+  const highMultiplier = highRiskPercentage / 100;
+  const mediumMultiplier = mediumRiskPercentage / 100;
+
+  if (stock <= threshold * highMultiplier) return "High";
+  if (stock <= threshold * mediumMultiplier) return "Medium";
   return "Low";
 }
 
@@ -69,7 +83,7 @@ router.post("/", async (req, res) => {
       reorderThreshold: threshold,
       totalUsed: 0,
       consumptionRate: 0,
-      riskLevel: calculateRiskLevel(stock, threshold)
+      riskLevel: await calculateRiskLevel(stock, threshold)
     });
 
     const savedItem = await newItem.save();
@@ -114,7 +128,7 @@ router.put("/:id", async (req, res) => {
     item.itemName = String(itemName).trim();
     item.currentStock = stock;
     item.reorderThreshold = threshold;
-    item.riskLevel = calculateRiskLevel(stock, threshold);
+    item.riskLevel = await calculateRiskLevel(stock, threshold);
     item.totalUsed = Math.max(Number(item.totalUsed) || 0, 0);
     item.consumptionRate = calculateConsumptionRate(item.totalUsed, item.createdAt);
 
@@ -192,7 +206,7 @@ router.post("/usage", async (req, res) => {
     item.currentStock -= quantityUsed;
     item.totalUsed = (item.totalUsed || 0) + quantityUsed;
     item.consumptionRate = calculateConsumptionRate(item.totalUsed, item.createdAt);
-    item.riskLevel = calculateRiskLevel(item.currentStock, item.reorderThreshold);
+    item.riskLevel = await calculateRiskLevel(item.currentStock, item.reorderThreshold);
 
     const updatedItem = await item.save();
 

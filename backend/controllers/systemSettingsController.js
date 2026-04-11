@@ -43,7 +43,8 @@ const updateSystemSettings = async (req, res) => {
       roleBasedAccess,
       auditLogging,
       darkMode,
-      refreshInterval
+      refreshInterval,
+      riskSettings
     } = req.body;
 
     if (systemName !== undefined) settings.systemName = systemName;
@@ -77,6 +78,44 @@ const updateSystemSettings = async (req, res) => {
 
     if (refreshInterval !== undefined) {
       settings.refreshInterval = Number(refreshInterval);
+    }
+
+    // NEW: risk percentage settings
+    if (riskSettings !== undefined) {
+      const currentHigh = settings.riskSettings?.highRiskPercentage ?? 50;
+      const currentMedium = settings.riskSettings?.mediumRiskPercentage ?? 100;
+
+      const highRiskPercentage =
+        riskSettings.highRiskPercentage !== undefined
+          ? Number(riskSettings.highRiskPercentage)
+          : currentHigh;
+
+      const mediumRiskPercentage =
+        riskSettings.mediumRiskPercentage !== undefined
+          ? Number(riskSettings.mediumRiskPercentage)
+          : currentMedium;
+
+      if (
+        isNaN(highRiskPercentage) ||
+        isNaN(mediumRiskPercentage) ||
+        highRiskPercentage <= 0 ||
+        mediumRiskPercentage <= 0
+      ) {
+        return res.status(400).json({
+          message: "Risk percentages must be valid positive numbers"
+        });
+      }
+
+      if (highRiskPercentage >= mediumRiskPercentage) {
+        return res.status(400).json({
+          message: "High risk percentage must be less than medium risk percentage"
+        });
+      }
+
+      settings.riskSettings = {
+        highRiskPercentage,
+        mediumRiskPercentage
+      };
     }
 
     const updated = await settings.save();
