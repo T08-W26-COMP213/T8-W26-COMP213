@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmationBanner from "./ConfirmationBanner";
 import "./SystemConfiguration.css";
 
 function SystemConfigurationLayout() {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  // Temporary hardcoded value for debugging
+ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const defaultSettings = {
     systemName: "StockGuard System",
@@ -30,19 +31,65 @@ function SystemConfigurationLayout() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  const showMessage = (text, type = "error") => {
+  const showMessage = useCallback((text, type = "error") => {
     setMessage(text);
     setMessageType(type);
-  };
+  }, []);
 
-  const clearMessage = () => {
+  const clearMessage = useCallback(() => {
     setMessage("");
     setMessageType("");
-  };
+  }, []);
+
+  const normalizeSettings = useCallback(
+    (input) => ({
+      ...defaultSettings,
+      ...input,
+      systemName: String(input?.systemName ?? defaultSettings.systemName).trim(),
+      organizationName: String(
+        input?.organizationName ?? defaultSettings.organizationName
+      ).trim(),
+      timezone: String(input?.timezone ?? defaultSettings.timezone),
+      language: String(input?.language ?? defaultSettings.language),
+      lowStockThreshold: Number(
+        input?.lowStockThreshold ?? defaultSettings.lowStockThreshold
+      ),
+      criticalStockThreshold: Number(
+        input?.criticalStockThreshold ?? defaultSettings.criticalStockThreshold
+      ),
+      autoRiskCalculation: Boolean(
+        input?.autoRiskCalculation ?? defaultSettings.autoRiskCalculation
+      ),
+      emailAlerts: Boolean(input?.emailAlerts ?? defaultSettings.emailAlerts),
+      lowStockAlerts: Boolean(input?.lowStockAlerts ?? defaultSettings.lowStockAlerts),
+      criticalAlerts: Boolean(input?.criticalAlerts ?? defaultSettings.criticalAlerts),
+      sessionTimeout: Number(input?.sessionTimeout ?? defaultSettings.sessionTimeout),
+      roleBasedAccess: Boolean(
+        input?.roleBasedAccess ?? defaultSettings.roleBasedAccess
+      ),
+      auditLogging: Boolean(input?.auditLogging ?? defaultSettings.auditLogging),
+      darkMode: Boolean(input?.darkMode ?? defaultSettings.darkMode),
+      refreshInterval: Number(
+        input?.refreshInterval ?? defaultSettings.refreshInterval
+      )
+    }),
+    []
+  );
 
   const hasUnsavedChanges = useMemo(() => {
     return JSON.stringify(settings) !== JSON.stringify(initialSettings);
   }, [settings, initialSettings]);
+
+  const isFormValid = useMemo(() => {
+    return (
+      settings.systemName.trim().length > 0 &&
+      settings.organizationName.trim().length > 0 &&
+      Number(settings.lowStockThreshold) >= 1 &&
+      Number(settings.criticalStockThreshold) >= 1 &&
+      Number(settings.sessionTimeout) >= 5 &&
+      Number(settings.refreshInterval) >= 5
+    );
+  }, [settings]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -53,84 +100,118 @@ function SystemConfigurationLayout() {
         type === "checkbox"
           ? checked
           : type === "number"
-          ? Number(value)
+          ? value === ""
+            ? ""
+            : Number(value)
           : value
     }));
 
-    if (message) {
-      clearMessage();
+    if (message) clearMessage();
+  };
+
+  const parseApiResponse = async (response) => {
+    const contentType = response.headers.get("content-type") || "";
+    const rawText = await response.text();
+
+    if (!contentType.includes("application/json")) {
+      console.error("Non-JSON response body:", rawText);
+      throw new Error(
+        `Expected JSON but received ${contentType || "unknown content type"}. Check API URL and backend route.`
+      );
+    }
+
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      console.error("Invalid JSON response body:", rawText);
+      throw new Error("Server returned invalid JSON.");
     }
   };
 
-  const fetchSystemSettings = async () => {
+  const fetchSystemSettings = useCallback(async () => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_BASE_URL}/api/system-settings`);
-      const data = await response.json();
+      const url = `${API_BASE_URL}/api/system-settings`;
+      console.log("Fetching system settings from:", url);
+
+      const response = await fetch(url);
+      const data = await parseApiResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch system settings.");
       }
 
-      const mergedSettings = {
-        ...defaultSettings,
-        ...data
-      };
-
+      const mergedSettings = normalizeSettings(data);
       setSettings(mergedSettings);
-      setInitialSettings({ ...mergedSettings });
+      setInitialSettings(mergedSettings);
     } catch (error) {
-      setSettings(defaultSettings);
-      setInitialSettings({ ...defaultSettings });
-      showMessage("Using default frontend settings for now.", "success");
+      const fallbackSettings = normalizeSettings(defaultSettings);
+      setSettings(fallbackSettings);
+      setInitialSettings(fallbackSettings);
+      showMessage(error.message || "Using default frontend settings for now.", "error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, normalizeSettings, showMessage]);
 
   useEffect(() => {
     fetchSystemSettings();
-  }, []);
+  }, [fetchSystemSettings]);
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     clearMessage();
 
+    if (saving) return;
+
+    if (!hasUnsavedChanges) {
+      showMessage("No changes to save.", "success");
+      return;
+    }
+
+    if (!isFormValid) {
+      showMessage("Please complete all required fields with valid values.", "error");
+      return;
+    }
+
     try {
       setSaving(true);
 
-      const response = await fetch(`${API_BASE_URL}/api/system-settings`, {
+      const payload = normalizeSettings(settings);
+      const url = `${API_BASE_URL}/api/system-settings`;
+
+      console.log("Saving system settings to:", url);
+      console.log("Payload:", payload);
+
+      const response = await fetch(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      const data = await parseApiResponse(response);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to save system settings.");
       }
 
-      const savedSettings = {
-        ...defaultSettings,
-        ...(data.settings || settings)
-      };
-
+      const savedSettings = normalizeSettings(data.settings || payload);
       setSettings(savedSettings);
-      setInitialSettings({ ...savedSettings });
-      showMessage(data.message || "System settings updated successfully.", "success");
+      setInitialSettings(savedSettings);
+      showMessage("System settings updated successfully.", "success");
     } catch (error) {
-      showMessage(error.message || "Backend not connected yet. Frontend design is ready.", "error");
+      showMessage(error.message || "Failed to save settings.", "error");
     } finally {
       setSaving(false);
     }
   };
 
   const handleResetDefaults = () => {
-    setSettings(defaultSettings);
+    const resetSettings = normalizeSettings(defaultSettings);
+    setSettings(resetSettings);
     showMessage("Settings reset to defaults locally. Click Save to apply.", "success");
   };
 
@@ -151,7 +232,12 @@ function SystemConfigurationLayout() {
         </div>
       </div>
 
-      <ConfirmationBanner message={message} type={messageType} onClose={clearMessage} />
+      <ConfirmationBanner
+        message={message}
+        type={messageType}
+        onClose={clearMessage}
+        autoCloseDuration={messageType === "success" ? 3000 : 4500}
+      />
 
       {loading ? (
         <div className="empty-state">
@@ -415,7 +501,11 @@ function SystemConfigurationLayout() {
             </div>
 
             <div className="settings-action-buttons">
-              <button type="submit" disabled={saving}>
+              <button
+                type="submit"
+                disabled={saving || !hasUnsavedChanges || !isFormValid}
+                title={!hasUnsavedChanges ? "Make a change to enable saving." : ""}
+              >
                 {saving ? "Saving..." : "Save Settings"}
               </button>
 

@@ -1,31 +1,40 @@
+/* =========================================
+   Premium Confirmation Banner
+   ========================================= */
+
 .confirmation-banner {
   position: fixed;
   top: 24px;
   left: 50%;
   transform: translateX(-50%);
   min-width: 420px;
-  max-width: 680px;
-  width: fit-content;
+  max-width: 720px;
+  width: min(92vw, 720px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 20px;
-  border-radius: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
   z-index: 9999;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid transparent;
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.18),
+    0 8px 18px rgba(15, 23, 42, 0.1);
+  animation: bannerSlideIn 0.3s ease;
 }
 
 .confirmation-banner.success {
-  background: #dff5e4;
-  border-color: #9ed8aa;
-  color: #166534;
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(209, 250, 229, 0.96));
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #065f46;
 }
 
 .confirmation-banner.error {
-  background: #fde7e7;
-  border-color: #efb0b0;
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.96), rgba(254, 226, 226, 0.96));
+  border-color: rgba(248, 113, 113, 0.3);
   color: #991b1b;
 }
 
@@ -34,35 +43,141 @@
   align-items: center;
   gap: 14px;
   flex: 1;
+  min-width: 0;
 }
 
 .banner-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 14px;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.confirmation-banner.success .banner-icon {
+  background: linear-gradient(135deg, #bbf7d0, #86efac);
+}
+
+.confirmation-banner.error .banner-icon {
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+}
+
+.banner-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
 }
 
 .banner-message {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 .banner-close {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
   cursor: pointer;
-  padding: 4px;
   color: inherit;
-  opacity: 0.75;
+  opacity: 0.9;
   flex-shrink: 0;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .banner-close:hover {
   opacity: 1;
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.banner-close:active {
+  transform: translateY(0);
+}
+
+.banner-close svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
+}
+
+/* subtle accent line */
+.confirmation-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: 18px 0 0 18px;
+}
+
+.confirmation-banner.success::before {
+  background: linear-gradient(180deg, #10b981, #22c55e);
+}
+
+.confirmation-banner.error::before {
+  background: linear-gradient(180deg, #ef4444, #f87171);
+}
+
+/* animation */
+@keyframes bannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .confirmation-banner {
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 24px);
+    min-width: unset;
+    max-width: unset;
+    padding: 14px 14px;
+    border-radius: 16px;
+    gap: 12px;
+  }
+
+  .banner-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 12px;
+  }
+
+  .banner-message {
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .banner-close {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+  }
 }
