@@ -7,8 +7,6 @@ import ReportDashboard from "./ReportDashboard";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
-import SystemConfigurationLayout from "./SystemConfigurationLayout";
-import SystemSettings from "./SystemSettings";
 
 function App() {
   const API_BASE_URL = "http://localhost:5000";
@@ -717,6 +715,10 @@ function App() {
           totalItems={totalItems}
           totalUnitsRemaining={totalUnitsRemaining}
         />
+
+        <ReportGenerationLayout />
+        <UserAccountManagementLayout />
+        <SystemStatusMonitoringLayout />
 
         <section className="content-grid">
           <div className="panel glass-panel">
