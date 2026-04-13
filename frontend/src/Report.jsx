@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-
 function Report({
   inventory,
   usageLogs,
@@ -11,8 +9,6 @@ function Report({
   onEditItem,
   formatUsageDate
 }) {
-  const [selectedLevel, setSelectedLevel] = useState("ALL");
-  
   const topUsageItems = [...inventory]
     .sort((a, b) => (b.totalUsed || 0) - (a.totalUsed || 0))
     .slice(0, 5);
@@ -39,19 +35,54 @@ function Report({
     if (typeof formatUsageDate === "function") {
       return formatUsageDate(value);
     }
-    return value || "N/A";
-  };
-  const filteredLogs = usageLogs.filter((log) => {
-  if (selectedLevel === "ALL") return true;
-
-  const levelMap = {
-    Low: "INFO",
-    Medium: "WARN",
-    High: "ERROR"
+    return value ? new Date(value).toLocaleDateString() : "N/A";
   };
 
-  return levelMap[log.riskLevel] === selectedLevel;
-});
+  const getUsageLogsForItem = (itemName) => {
+    return usageLogs.filter((log) => log.itemName === itemName);
+  };
+
+  const getActiveDays = (itemName) => {
+    const itemLogs = getUsageLogsForItem(itemName);
+
+    if (itemLogs.length === 0) {
+      return 1;
+    }
+
+    const validDates = itemLogs
+      .map((log) => new Date(log.usageDate))
+      .filter((date) => !Number.isNaN(date.getTime()))
+      .sort((a, b) => a - b);
+
+    if (validDates.length === 0) {
+      return 1;
+    }
+
+    const firstUsageDate = validDates[0];
+    const today = new Date();
+    const diffTime = today - firstUsageDate;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return Math.max(diffDays, 1);
+  };
+
+  const consumptionRateData = [...inventory]
+    .map((item) => {
+      const totalUsed = item.totalUsed || 0;
+      const activeDays = getActiveDays(item.itemName);
+      const usageRate = totalUsed > 0 ? totalUsed / activeDays : 0;
+      const daysToDepletion =
+        usageRate > 0 ? Math.floor(item.currentStock / usageRate) : null;
+
+      return {
+        ...item,
+        totalUsed,
+        activeDays,
+        usageRate: Number(usageRate.toFixed(2)),
+        daysToDepletion
+      };
+    })
+    .sort((a, b) => b.usageRate - a.usageRate);
 
   return (
     <>
@@ -84,22 +115,22 @@ function Report({
             <span className="panel-tag">Statistics</span>
           </div>
 
-          <div className="risk-summary-grid">
-            <div className="stat-card risk-summary-card">
+          <section className="stats-grid" style={{ marginBottom: 0 }}>
+            <div className="stat-card">
               <p className="stat-title">Safe Items</p>
               <h3>{safeCount}</h3>
             </div>
 
-            <div className="stat-card risk-summary-card">
+            <div className="stat-card">
               <p className="stat-title">At Risk Items</p>
               <h3>{atRiskCount}</h3>
             </div>
 
-            <div className="stat-card risk-summary-card">
+            <div className="stat-card">
               <p className="stat-title">Critical Items</p>
               <h3>{criticalCount}</h3>
             </div>
-          </div>
+          </section>
         </div>
 
         <div className="panel glass-panel">
@@ -139,6 +170,69 @@ function Report({
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="table-panel">
+        <div className="panel-header">
+          <h2>Consumption Rate Analysis</h2>
+          <span className="panel-tag">Usage Rate</span>
+        </div>
+
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Current Stock</th>
+                <th>Total Used</th>
+                <th>Active Days</th>
+                <th>Usage Rate / Day</th>
+                <th>Days to Depletion</th>
+                <th>Risk Level</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {consumptionRateData.length === 0 ? (
+                <tr>
+                  <td colSpan="7">No inventory data available for consumption analysis.</td>
+                </tr>
+              ) : (
+                consumptionRateData.map((item) => (
+                  <tr key={item._id}>
+                    <td>{item.itemName}</td>
+                    <td>{item.currentStock}</td>
+                    <td>{item.totalUsed}</td>
+                    <td>{item.activeDays}</td>
+                    <td>{item.usageRate}</td>
+                    <td>
+                      {item.daysToDepletion === null ? (
+                        <span className="depletion-na">N/A</span>
+                      ) : (
+                        <span
+                          className={`depletion-days ${
+                            item.daysToDepletion <= 7
+                              ? "critical"
+                              : item.daysToDepletion <= 14
+                              ? "warning"
+                              : "safe"
+                          }`}
+                        >
+                          {item.daysToDepletion} days
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`risk-badge ${getRiskClass(item.riskLevel)}`}>
+                        {getDisplayRisk(item.riskLevel)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -250,16 +344,6 @@ function Report({
       <section className="table-panel">
         <div className="panel-header">
           <h2>Inventory Usage Log</h2>
-          <select
-  value={selectedLevel}
-  onChange={(e) => setSelectedLevel(e.target.value)}
-  style={{ marginBottom: "10px" }}
->
-  <option value="ALL">All</option>
-  <option value="INFO">INFO</option>
-  <option value="WARN">WARN</option>
-  <option value="ERROR">ERROR</option>
-</select>
           <span className="panel-tag">Submission History</span>
         </div>
 
@@ -281,7 +365,7 @@ function Report({
                   <td colSpan="5">No usage records submitted yet.</td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => (
+                usageLogs.map((log) => (
                   <tr key={log._id}>
                     <td>{log.itemName}</td>
                     <td>{log.quantityUsed}</td>
