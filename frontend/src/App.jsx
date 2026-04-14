@@ -5,6 +5,7 @@ import InventoryRiskLayout from "./InventoryRiskLayout";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import ExportReport from "./ExportReport";
 import ReportDashboard from "./ReportDashboard";
+import ReportGenerationLayout from "./ReportGenerationLayout";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
@@ -722,6 +723,8 @@ function App() {
           totalUnitsRemaining={totalUnitsRemaining}
         />
 
+        <ReportGenerationLayout />
+        <SystemStatusMonitoringLayout />
         {/* <ReportGenerationLayout /> */}
         <UserAccountManagementLayout />
         {/* <SystemStatusMonitoringLayout /> */}
