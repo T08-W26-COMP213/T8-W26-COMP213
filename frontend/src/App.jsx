@@ -4,9 +4,13 @@ import InventoryRiskLayout from "./InventoryRiskLayout";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import ExportReport from "./ExportReport";
 import ReportDashboard from "./ReportDashboard";
+import ReportGenerationLayout from "./ReportGenerationLayout";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
+import SystemConfigurationLayout from "./SystemConfigurationLayout";
+import SystemSettings from "./SystemSettings";
+import SystemStatusMonitoringLayout from "./SystemStatusMonitoringLayout";
 
 function App() {
   const API_BASE_URL = "http://localhost:5000";
@@ -717,7 +721,6 @@ function App() {
         />
 
         <ReportGenerationLayout />
-        <UserAccountManagementLayout />
         <SystemStatusMonitoringLayout />
 
         <section className="content-grid">
