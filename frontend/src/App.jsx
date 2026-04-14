@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import TrendAnalysis from "./TrendAnalysis";
 import InventoryRiskLayout from "./InventoryRiskLayout";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import ExportReport from "./ExportReport";
@@ -10,6 +11,7 @@ import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
 import SystemConfigurationLayout from "./SystemConfigurationLayout";
 import SystemSettings from "./SystemSettings";
+import ReportGenerationLayout from "./ReportGenerationLayout";
 import SystemStatusMonitoringLayout from "./SystemStatusMonitoringLayout";
 
 function App() {
@@ -504,6 +506,7 @@ function App() {
           backendConnected={backendConnected}
           fetchInventory={fetchInventory}
         />
+        <TrendAnalysis inventory={inventory} usageLogs={usageLogs} />
 
         <InventoryDashboardLayout
           inventory={inventory}
@@ -512,8 +515,8 @@ function App() {
         />
 
         <UserAccountManagementLayout />
-        <SystemConfigurationLayout />
-        <SystemSettings />
+        {/* <SystemConfigurationLayout />
+        <SystemSettings /> */}
 
         <ExportReport inventory={inventory} />
 
@@ -722,6 +725,9 @@ function App() {
 
         <ReportGenerationLayout />
         <SystemStatusMonitoringLayout />
+        {/* <ReportGenerationLayout /> */}
+        <UserAccountManagementLayout />
+        {/* <SystemStatusMonitoringLayout /> */}
 
         <section className="content-grid">
           <div className="panel glass-panel">

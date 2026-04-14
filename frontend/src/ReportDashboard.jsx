@@ -82,11 +82,50 @@ function ReportDashboard() {
         setError(err.message || "Something went wrong while loading reports.");
       } finally {
         setLoading(false);
+  const mockData = {
+    totalItems: 5,
+    totalStockRemaining: 200,
+    lowStockItems: 2,
+    highRiskItems: 1,
+    totalUnitsUsed: 120,
+    itemDetails: [
+      {
+        itemName: "Gloves",
+        currentStock: 20,
+        reorderThreshold: 30,
+        totalUsed: 50,
+        riskLevel: "Medium"
+      },
+      {
+        itemName: "Masks",
+        currentStock: 80,
+        reorderThreshold: 40,
+        totalUsed: 30,
+        riskLevel: "Low"
+      },
+      {
+        itemName: "Sanitizer",
+        currentStock: 10,
+        reorderThreshold: 25,
+        totalUsed: 70,
+        riskLevel: "High"
       }
-    };
+    ],
+    riskDistribution: [
+      { name: "High", value: 1 },
+      { name: "Medium", value: 1 },
+      { name: "Low", value: 1 }
+    ],
+    usageTrends: [
+      { name: "Gloves", totalUsed: 50 },
+      { name: "Masks", totalUsed: 30 },
+      { name: "Sanitizer", totalUsed: 70 }
+    ]
+  };
 
-    fetchReportData();
-  }, []);
+  setReportData(mockData);
+  setLoading(false);
+}, []);
 
   const itemOptions = useMemo(() => {
     if (!inventorySummary.length) return ["All Items"];
@@ -418,7 +457,9 @@ function ReportDashboard() {
   if (error) {
     return <div className="report-message error">{error}</div>;
   }
-
+if (!reportData) {
+  return <div className="report-message">Loading data...</div>;
+}
   return (
     <div className="report-dashboard">
       <div className="report-heading-row report-heading-row-enhanced">
@@ -674,6 +715,7 @@ function ReportDashboard() {
 
       <div className="report-chart-grid premium-report-grid">
         {reportType === "stock-levels" && selectedItemDetails && (
+          
           <div className="chart-card premium-chart-card">
             <div className="chart-header">
               <div>
@@ -682,20 +724,20 @@ function ReportDashboard() {
               </div>
             </div>
 
-            <div className="stock-health-card">
-              <div className="stock-health-top">
-                <div className="stock-health-stat">
-                  <span>Current Stock</span>
-                  <strong>{selectedItemDetails.currentStock}</strong>
-                </div>
+<div className="stock-health-card">
+  <div className="stock-health-top">
+    <div className="stock-health-stat">
+      <span>Current Stock</span>
+      <strong>{selectedItemDetails.currentStock}</strong>
+    </div>
 
-                <div className="stock-health-stat">
-                  <span>Threshold</span>
-                  <strong>{selectedItemDetails.reorderThreshold}</strong>
-                </div>
-              </div>
+    <div className="stock-health-stat">
+      <span>Threshold</span>
+      <strong>{selectedItemDetails.reorderThreshold}</strong>
+    </div>
+  </div>
 
-              <div className="stock-health-bar-area">
+  <div className="stock-health-bar-area">
                 <div className="stock-health-bar-labels">
                   <span>Stock Level</span>
                   <span>{Math.round(stockHealthWidth)}%</span>
@@ -1020,8 +1062,47 @@ function ReportDashboard() {
           </div>
         )}
       </div>
+      {/* ✅ Trend Data Table */}
+<div className="report-table-section">
+  <h3>Trend Data Table</h3>
+
+  <div className="table-responsive">
+    <table className="report-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Stock</th>
+          <th>Threshold</th>
+          <th>Used</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+
+      <tbody>
+  {exportRows?.length > 0 ? (
+    exportRows.map((item, index) => (
+      <tr key={index}>
+        <td>{item.itemName}</td>
+        <td>{item.currentStock}</td>
+        <td>{item.reorderThreshold}</td>
+        <td>{item.totalUsed}</td>
+        <td className={`risk-${item.riskLevel.toLowerCase()}`}>
+          {item.riskLevel}
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="5">No data available</td>
+    </tr>
+  )}
+</tbody>
+    </table>
+  </div>
+</div>
     </div>
   );
 }
+ 
 
 export default ReportDashboard;
