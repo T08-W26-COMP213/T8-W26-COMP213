@@ -9,10 +9,6 @@ import ReportGenerationLayout from "./ReportGenerationLayout";
 import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import Report from "./Report";
-import SystemConfigurationLayout from "./SystemConfigurationLayout";
-import SystemSettings from "./SystemSettings";
-import ReportGenerationLayout from "./ReportGenerationLayout";
-import SystemStatusMonitoringLayout from "./SystemStatusMonitoringLayout";
 
 function App() {
   const API_BASE_URL = "http://localhost:5000";
@@ -725,9 +721,6 @@ function App() {
 
         <ReportGenerationLayout />
         <SystemStatusMonitoringLayout />
-        {/* <ReportGenerationLayout /> */}
-        <UserAccountManagementLayout />
-        {/* <SystemStatusMonitoringLayout /> */}
 
         <section className="content-grid">
           <div className="panel glass-panel">
