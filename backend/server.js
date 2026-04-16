@@ -7,6 +7,7 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const userRoutes = require("./routes/userRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
+const authRoutes = require("./routes/authRoutes")
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -194,6 +195,7 @@ app.use("/api/inventory", requireDatabaseConnection, inventoryRoutes);
 app.use("/api/users", requireDatabaseConnection, userRoutes);
 app.use("/api/reports", requireDatabaseConnection, reportRoutes);
 app.use("/api/system-settings", requireDatabaseConnection, systemSettingsRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
