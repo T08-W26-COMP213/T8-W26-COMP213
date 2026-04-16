@@ -4,6 +4,7 @@ import "./App.css";
 import "./theme-dark.css";
 import Login from "./Login";
 import Sidebar from "./Sidebar";
+import TrendAnalysis from "./TrendAnalysis";
 import InventoryRiskLayout from "./InventoryRiskLayout";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import ReportDashboard from "./ReportDashboard";
@@ -11,6 +12,7 @@ import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import SystemConfigurationLayout from "./SystemConfigurationLayout";
 import SystemSettings from "./SystemSettings";
+import Report from "./Report";
 
 function App() {
   const getTodayLocalISO = useCallback(() => {
@@ -833,6 +835,13 @@ function App() {
       if (left > right) return usageSortDirection === "asc" ? 1 : -1;
       return 0;
     });
+        <InventoryRiskLayout
+          inventory={inventory}
+          loading={loading}
+          backendConnected={backendConnected}
+          fetchInventory={fetchInventory}
+        />
+        <TrendAnalysis inventory={inventory} usageLogs={usageLogs} />
 
     return sorted;
   }, [usageLogs, usageRiskFilter, usageTimelineFilter, usageSortBy, usageSortDirection, getTimelineCutoffYmd, logUsageYmdForFilter]);
@@ -845,6 +854,9 @@ function App() {
       return "Unknown";
     }
   })();
+        <UserAccountManagementLayout />
+        {/* <SystemConfigurationLayout />
+        <SystemSettings /> */}
 
   if (!user) return <Login onLogin={handleLogin} />;
 

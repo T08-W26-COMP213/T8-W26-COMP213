@@ -1,0 +1,102 @@
+.trend-container {
+  padding: 20px;
+}
+
+/* HEADER */
+.trend-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.trend-header h2 {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.trend-header p {
+  color: #666;
+}
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* CARDS */
+.trend-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* TABLE */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+th {
+  background: #f4f6f9;
+  font-weight: 600;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.empty {
+  text-align: center;
+  color: #777;
+}
+
+/* RISK COLORS */
+.risk.high {
+  color: red;
+  font-weight: bold;
+}
+
+.risk.medium {
+  color: orange;
+}
+
+.risk.low {
+  color: green;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  th, td {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
