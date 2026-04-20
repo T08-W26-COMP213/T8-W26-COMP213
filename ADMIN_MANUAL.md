@@ -5,7 +5,7 @@
 ## 1. Overview
 
 - **Components:** React (Vite) frontend, Express API, MongoDB
-- **Repository layout:** `frontend/`, `backend/`, `docs/`
+- **Repository layout:** `frontend/`, `backend/`
 
 ## 2. Prerequisites
 
