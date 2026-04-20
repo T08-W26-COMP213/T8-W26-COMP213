@@ -21,7 +21,6 @@
 
 ## 4. Main Navigation (Sidebar)
 
-Briefly describe each area and **who** can see it _(map to your roles: e.g. System Administrator vs Operational Staff)_:
 
 - [ ] Dashboard
 - [ ] Inventory
@@ -85,4 +84,4 @@ Briefly describe each area and **who** can see it _(map to your roles: e.g. Syst
 
 ---
 
-**TODO for your team:** Replace every `[ ]` and `_(...)_` with real steps and **screenshots** from your Release 1.0 build.
+
