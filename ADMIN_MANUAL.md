@@ -111,4 +111,4 @@ npm test
 
 ---
 
-**TODO for your team:** Fill URLs, ports, exact commands you verified on Windows, and any **course-specific** hosting notes.
+
