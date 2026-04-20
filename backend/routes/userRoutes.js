@@ -4,6 +4,9 @@ const User = require("../models/User");
 
 const router = express.Router();
 
+/**
+ * Returns all users sorted by most recently created.
+ */
 router.get("/", async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
@@ -16,6 +19,9 @@ router.get("/", async (req, res) => {
   }
 });
 
+/**
+ * Returns one user by MongoDB ObjectId.
+ */
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -43,6 +49,9 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/**
+ * Creates a user profile without an initial password.
+ */
 router.post("/", async (req, res) => {
   try {
     const { username, email, role, status } = req.body;
@@ -72,7 +81,8 @@ router.post("/", async (req, res) => {
     const newUser = new User({
       username: username.trim(),
       email: email.trim().toLowerCase(),
-      password: req.body.password || "stockguard123",
+      password: null,
+      hasPassword: false,
       role,
       status
     });
@@ -91,6 +101,9 @@ router.post("/", async (req, res) => {
   }
 });
 
+/**
+ * Updates selected user fields by id.
+ */
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -164,6 +177,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+/**
+ * Deletes a user account by id.
+ */
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;

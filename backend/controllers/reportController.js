@@ -1,8 +1,27 @@
 const Inventory = require("../models/Inventory");
 const UsageLog = require("../models/UsageLog");
 
+/**
+ * Builds the inventory summary payload used by reporting dashboards.
+ * Supports optional YYYY-MM-DD date range filtering for usage metrics.
+ */
 const getInventorySummaryReport = async (req, res) => {
   try {
+    const reportType = String(req.query.reportType || "stock-levels");
+    const startDate = String(req.query.startDate || "").trim();
+    const endDate = String(req.query.endDate || "").trim();
+
+    const usageMatch = {};
+    if (/^\d{4}-\d{2}-\d{2}$/.test(startDate) || /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      usageMatch.usageDate = {};
+      if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+        usageMatch.usageDate.$gte = startDate;
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        usageMatch.usageDate.$lte = endDate;
+      }
+    }
+
     const totalItems = await Inventory.countDocuments();
     const inventoryItems = await Inventory.find();
 
@@ -20,6 +39,7 @@ const getInventorySummaryReport = async (req, res) => {
     ).length;
 
     const totalUnitsUsedAgg = await UsageLog.aggregate([
+      ...(Object.keys(usageMatch).length > 0 ? [{ $match: usageMatch }] : []),
       {
         $group: {
           _id: null,
@@ -32,6 +52,7 @@ const getInventorySummaryReport = async (req, res) => {
       totalUnitsUsedAgg.length > 0 ? totalUnitsUsedAgg[0].totalUnitsUsed : 0;
 
     const usageTrends = await UsageLog.aggregate([
+      ...(Object.keys(usageMatch).length > 0 ? [{ $match: usageMatch }] : []),
       {
         $group: {
           _id: "$itemName",
@@ -42,6 +63,11 @@ const getInventorySummaryReport = async (req, res) => {
         $sort: { totalUsed: -1 }
       }
     ]);
+
+    const usageEntries = await UsageLog.find(usageMatch)
+      .select("itemName quantityUsed usageDate")
+      .sort({ usageDate: -1, createdAt: -1 })
+      .lean();
 
     const riskDistributionAgg = await Inventory.aggregate([
       {
@@ -71,6 +97,11 @@ const getInventorySummaryReport = async (req, res) => {
     }));
 
     res.status(200).json({
+      reportType,
+      appliedDateRange: {
+        startDate: /^\d{4}-\d{2}-\d{2}$/.test(startDate) ? startDate : null,
+        endDate: /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : null
+      },
       totalItems,
       totalStockRemaining,
       lowStockItems,
@@ -80,6 +111,7 @@ const getInventorySummaryReport = async (req, res) => {
         name: item._id,
         totalUsed: item.totalUsed
       })),
+      usageEntries,
       riskDistribution,
       itemDetails
     });

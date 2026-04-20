@@ -29,6 +29,12 @@ function SystemConfigurationLayout() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [serverInfo, setServerInfo] = useState({
+    serverPort: "Unknown",
+    apiBaseUrl: API_BASE_URL,
+    databaseUri: "Not available",
+    databaseState: "unknown"
+  });
 
   const showMessage = useCallback((text, type = "error") => {
     setMessage(text);
@@ -157,6 +163,32 @@ function SystemConfigurationLayout() {
   useEffect(() => {
     fetchSystemSettings();
   }, [fetchSystemSettings]);
+
+  useEffect(() => {
+    const fetchServerInfo = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/health`);
+        const data = await response.json();
+        let port = "Unknown";
+        try {
+          const url = new URL(API_BASE_URL);
+          port = url.port || (url.protocol === "https:" ? "443" : "80");
+        } catch {
+          port = "Unknown";
+        }
+        setServerInfo({
+          serverPort: port,
+          apiBaseUrl: API_BASE_URL,
+          databaseUri: data?.database?.displayUri || "Not available",
+          databaseState: data?.database?.stateLabel || "unknown"
+        });
+      } catch {
+        setServerInfo((prev) => ({ ...prev, apiBaseUrl: API_BASE_URL }));
+      }
+    };
+
+    fetchServerInfo();
+  }, [API_BASE_URL]);
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -497,6 +529,36 @@ function SystemConfigurationLayout() {
                   value={settings.refreshInterval}
                   onChange={handleChange}
                 />
+              </label>
+            </div>
+
+            <div className="system-config-card">
+              <div className="dashboard-section-header system-card-header">
+                <div className="system-card-icon">🧭</div>
+                <div>
+                  <h3>Server Configuration</h3>
+                  <p>Backend and database connection details</p>
+                </div>
+              </div>
+
+              <label>
+                Server Port
+                <input type="text" value={serverInfo.serverPort} readOnly />
+              </label>
+
+              <label>
+                API Base URL
+                <input type="text" value={serverInfo.apiBaseUrl} readOnly />
+              </label>
+
+              <label>
+                Database URI
+                <input type="text" value={serverInfo.databaseUri} readOnly />
+              </label>
+
+              <label>
+                MongoDB Status
+                <input type="text" value={serverInfo.databaseState} readOnly />
               </label>
             </div>
           </div>

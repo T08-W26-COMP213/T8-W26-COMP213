@@ -4,7 +4,6 @@ import "./App.css";
 import "./theme-dark.css";
 import Login from "./Login";
 import Sidebar from "./Sidebar";
-import TrendAnalysis from "./TrendAnalysis";
 import InventoryRiskLayout from "./InventoryRiskLayout";
 import InventoryDashboardLayout from "./InventoryDashboardLayout";
 import ReportDashboard from "./ReportDashboard";
@@ -12,7 +11,9 @@ import UserAccountManagementLayout from "./UserAccountManagementLayout";
 import ConfirmationBanner from "./ConfirmationBanner";
 import SystemConfigurationLayout from "./SystemConfigurationLayout";
 import SystemSettings from "./SystemSettings";
-import Report from "./Report";
+
+/** Session-only: cleared when the browser tab/session ends so users see sign-in first on a new visit. */
+const USER_SESSION_KEY = "stockguard_user";
 
 function App() {
   const getTodayLocalISO = useCallback(() => {
@@ -99,13 +100,13 @@ function App() {
   }, []);
 
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("stockguard_user");
-    if (!saved) return null;
     try {
+      const saved = sessionStorage.getItem(USER_SESSION_KEY);
+      if (!saved) return null;
       const u = JSON.parse(saved);
       if (u.role === "Strategic Role") {
         u.role = "Business Owner";
-        localStorage.setItem("stockguard_user", JSON.stringify(u));
+        sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(u));
       }
       return u;
     } catch {
@@ -146,6 +147,7 @@ function App() {
   const [showUsageModal, setShowUsageModal] = useState(false);
   const [usageModalOffset, setUsageModalOffset] = useState({ x: 0, y: 0 });
   const [serverLogs, setServerLogs] = useState([]);
+  const [serverLogLevelFilter, setServerLogLevelFilter] = useState("ALL");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem("stockguard_sidebar_collapsed") === "1";
@@ -257,7 +259,8 @@ function App() {
       const data = await response.json();
       if (response.ok && data.logs) setServerLogs(data.logs);
     } catch {
-      console.error("Failed to fetch server logs");
+      // Keep monitoring view resilient when logs endpoint is temporarily unavailable.
+      void 0;
     }
   }, [API_BASE_URL]);
 
@@ -294,19 +297,36 @@ function App() {
     return () => clearTimeout(timer);
   }, [message]);
 
+  useEffect(() => {
+    try {
+      localStorage.removeItem(USER_SESSION_KEY);
+    } catch {
+      void 0;
+    }
+  }, []);
+
   const handleLogin = (userData) => {
     const normalized = { ...userData };
     if (normalized.role === "Strategic Role") {
       normalized.role = "Business Owner";
     }
     setUser(normalized);
-    localStorage.setItem("stockguard_user", JSON.stringify(normalized));
+    try {
+      sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(normalized));
+    } catch {
+      void 0;
+    }
     setActivePage("dashboard");
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem("stockguard_user");
+    try {
+      sessionStorage.removeItem(USER_SESSION_KEY);
+      localStorage.removeItem(USER_SESSION_KEY);
+    } catch {
+      void 0;
+    }
     setActivePage("dashboard");
     setInventory([]);
     setUsageLogs([]);
@@ -835,10 +855,16 @@ function App() {
       if (left > right) return usageSortDirection === "asc" ? 1 : -1;
       return 0;
     });
-       
 
     return sorted;
   }, [usageLogs, usageRiskFilter, usageTimelineFilter, usageSortBy, usageSortDirection, getTimelineCutoffYmd, logUsageYmdForFilter]);
+
+  const displayedServerLogs = useMemo(() => {
+    if (serverLogLevelFilter === "ALL") return serverLogs;
+    return serverLogs.filter(
+      (log) => String(log.level || "").toUpperCase() === serverLogLevelFilter
+    );
+  }, [serverLogs, serverLogLevelFilter]);
 
   const SERVER_PORT = (() => {
     try {
@@ -890,9 +916,24 @@ function App() {
       <InventoryDashboardLayout
         inventory={inventory}
         loading={loading}
-        onRefresh={() => {
-          fetchInventory();
-          fetchUsageLogs();
+        onRefresh={async () => {
+          try {
+            const response = await fetch(`${API_URL}/recalculate-risk`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" }
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              showMessage(data.message || "Could not recalculate inventory risk levels.", "error");
+              addSystemLog("ERROR", "Recalculate-risk request failed.");
+              return;
+            }
+            await fetchInventory();
+            addSystemLog("INFO", data.message || "Inventory risk levels refreshed.");
+          } catch {
+            showMessage("Could not refresh inventory risk levels.", "error");
+            addSystemLog("ERROR", "Recalculate-risk request failed.");
+          }
         }}
       />
 
@@ -1560,6 +1601,13 @@ function App() {
               </span>
               <p className="database-status-subtext">API service health</p>
             </div>
+            <div className="database-status-card">
+              <span className="database-status-title">API Status</span>
+              <span className={`database-status-badge ${backendConnected ? "connected" : "disconnected"}`}>
+                {backendConnected ? "Healthy" : "Down"}
+              </span>
+              <p className="database-status-subtext">`/api/health` endpoint</p>
+            </div>
           </div>
           <div className="database-settings-box">
             <div className="database-setting-row">
@@ -1584,13 +1632,26 @@ function App() {
             <h2>Server System Logs</h2>
             <span className="panel-tag">Backend Logs</span>
           </div>
-          <button
-            type="button"
-            onClick={fetchServerLogs}
-            style={{ padding: "8px 14px", borderRadius: "8px", border: "none", cursor: "pointer" }}
-          >
-            Refresh Logs
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <select
+              value={serverLogLevelFilter}
+              onChange={(e) => setServerLogLevelFilter(e.target.value)}
+              style={{ padding: "8px 10px", borderRadius: "8px", border: "1px solid #c9d2e4" }}
+              aria-label="Filter logs by level"
+            >
+              <option value="ALL">All Levels</option>
+              <option value="ERROR">ERROR</option>
+              <option value="WARNING">WARNING</option>
+              <option value="INFO">INFO</option>
+            </select>
+            <button
+              type="button"
+              onClick={fetchServerLogs}
+              style={{ padding: "8px 14px", borderRadius: "8px", border: "none", cursor: "pointer" }}
+            >
+              Refresh Logs
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table>
@@ -1604,12 +1665,12 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {serverLogs.length === 0 ? (
+              {displayedServerLogs.length === 0 ? (
                 <tr>
                   <td colSpan="5">No server logs available.</td>
                 </tr>
               ) : (
-                serverLogs.map((log) => (
+                displayedServerLogs.map((log) => (
                   <tr key={log.id}>
                     <td>{new Date(log.timestamp).toLocaleString()}</td>
                     <td>

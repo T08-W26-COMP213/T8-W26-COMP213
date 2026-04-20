@@ -17,8 +17,12 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      default: null,
       minlength: 6
+    },
+    hasPassword: {
+      type: Boolean,
+      default: true
     },
     role: {
       type: String,
@@ -38,13 +42,23 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+/**
+ * Hashes a password before persistence when a new value is provided.
+ */
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
+  if (!this.password) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+/**
+ * Compares a plaintext candidate against the stored password hash.
+ * @param {string} candidatePassword
+ * @returns {Promise<boolean>}
+ */
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 

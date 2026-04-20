@@ -71,6 +71,11 @@ function AddUserForm({ onUserAdded }) {
     }
   };
 
+  const clearMessage = () => {
+    setMessage("");
+    setMessageType("");
+  };
+
   return (
     <section className="panel glass-panel add-user-panel">
       <div className="panel-header">
@@ -132,7 +137,12 @@ function AddUserForm({ onUserAdded }) {
         </div>
       </form>
 
-      <ConfirmationBanner message={message} type={messageType} />
+      <ConfirmationBanner
+        message={message}
+        type={messageType}
+        onClose={clearMessage}
+        autoCloseDuration={2000}
+      />
     </section>
   );
 }

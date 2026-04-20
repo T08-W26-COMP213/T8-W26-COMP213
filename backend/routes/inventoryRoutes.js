@@ -2,28 +2,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Inventory = require("../models/Inventory");
 const UsageLog = require("../models/UsageLog");
-const SystemSettings = require("../models/SystemSettings");
+const { calculateRiskLevel, refreshAllInventoryRiskLevels } = require("../utils/inventoryRisk");
 
 const router = express.Router();
-
-async function calculateRiskLevel(stock, threshold) {
-  let settings = await SystemSettings.findOne();
-
-  if (!settings) {
-    settings = new SystemSettings();
-    await settings.save();
-  }
-
-  const highRiskPercentage = settings.riskSettings?.highRiskPercentage ?? 50;
-  const mediumRiskPercentage = settings.riskSettings?.mediumRiskPercentage ?? 100;
-
-  const highMultiplier = highRiskPercentage / 100;
-  const mediumMultiplier = mediumRiskPercentage / 100;
-
-  if (stock <= threshold * highMultiplier) return "High";
-  if (stock <= threshold * mediumMultiplier) return "Medium";
-  return "Low";
-}
 
 function calculateConsumptionRate(totalUsed, createdAt) {
   const createdDate = new Date(createdAt);
@@ -96,6 +77,24 @@ router.post("/", async (req, res) => {
     console.error("Add item error:", error);
     res.status(400).json({
       message: "Failed to add inventory item",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Recompute riskLevel for every row from current stock, thresholds, and system risk rules.
+ */
+router.post("/recalculate-risk", async (req, res) => {
+  try {
+    await refreshAllInventoryRiskLevels();
+    res.json({
+      message: "Risk levels recalculated for all inventory items."
+    });
+  } catch (error) {
+    console.error("Recalculate risk error:", error);
+    res.status(500).json({
+      message: "Failed to recalculate inventory risk levels",
       error: error.message
     });
   }

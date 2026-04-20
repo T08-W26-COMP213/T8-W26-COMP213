@@ -183,6 +183,17 @@
   line-height: 1.45;
 }
 
+.login-success {
+  background: #ecfdf5;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 18px;
+  line-height: 1.45;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -219,6 +230,10 @@
 
 .login-field input::placeholder {
   color: #94a3b8;
+}
+
+.login-field input[readonly] {
+  background: #f1f5f9;
 }
 
 .password-wrapper {
@@ -295,4 +310,10 @@
 
 .login-toggle-link:hover {
   text-decoration: underline;
+}
+
+.login-inline-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
 }

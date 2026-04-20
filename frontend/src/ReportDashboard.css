@@ -783,3 +783,13 @@
   }
 }
 }
+
+.risk-unknown {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.risk-badge.unknown {
+  background: #e2e8f0;
+  color: #475569;
+}

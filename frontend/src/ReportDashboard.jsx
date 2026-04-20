@@ -14,10 +14,12 @@ import {
 } from "recharts";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import ConfirmationBanner from "./ConfirmationBanner";
 import "./ReportDashboard.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const API_URL = `${API_BASE_URL}/api/reports/inventory-summary`;
+const getTodayYmd = () => new Date().toISOString().split("T")[0];
 
 const PIE_COLORS = {
   High: "#ff1a6b",
@@ -40,56 +42,24 @@ function ReportDashboard() {
   const [reportData, setReportData] = useState(null);
   const [selectedItem, setSelectedItem] = useState("All Items");
   const [reportType, setReportType] = useState("stock-levels");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState(getTodayYmd());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isExportingCSV, setIsExportingCSV] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [exportToast, setExportToast] = useState({ visible: false, message: "", type: "success" });
+  const [dateToast, setDateToast] = useState({ visible: false, message: "", type: "success" });
 
-useEffect(() => {
-  const fetchReportData = async () => {
-    const mockData = {
-      totalItems: 5,
-      totalStockRemaining: 200,
-      lowStockItems: 2,
-      highRiskItems: 1,
-      totalUnitsUsed: 120,
-      itemDetails: [
-        {
-          itemName: "Gloves",
-          currentStock: 20,
-          reorderThreshold: 30,
-          totalUsed: 50,
-          riskLevel: "Medium"
-        },
-        {
-          itemName: "Masks",
-          currentStock: 80,
-          reorderThreshold: 40,
-          totalUsed: 30,
-          riskLevel: "Low"
-        },
-        {
-          itemName: "Sanitizer",
-          currentStock: 10,
-          reorderThreshold: 25,
-          totalUsed: 70,
-          riskLevel: "High"
-        }
-      ],
-      riskDistribution: [
-        { name: "High", value: 1 },
-        { name: "Medium", value: 1 },
-        { name: "Low", value: 1 }
-      ],
-      usageTrends: [
-        { name: "Gloves", totalUsed: 50 },
-        { name: "Masks", totalUsed: 30 },
-        { name: "Sanitizer", totalUsed: 70 }
-      ]
-    };
-
+  const fetchReportData = async (nextReportType = reportType, nextStartDate = dateFrom, nextEndDate = dateTo) => {
     try {
-      const response = await fetch(API_URL);
+      setLoading(true);
+      setError("");
+      const params = new URLSearchParams();
+      params.set("reportType", nextReportType);
+      if (nextStartDate) params.set("startDate", nextStartDate);
+      if (nextEndDate) params.set("endDate", nextEndDate);
+      const response = await fetch(`${API_URL}?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch report data");
@@ -97,17 +67,16 @@ useEffect(() => {
 
       const data = await response.json();
       setReportData(data);
-      setError("");
     } catch (err) {
       setError(err.message || "Something went wrong while loading reports.");
-      setReportData(mockData);
     } finally {
       setLoading(false);
     }
   };
 
-  fetchReportData();
-}, []);
+  useEffect(() => {
+    fetchReportData("stock-levels", "", getTodayYmd());
+  }, []);
 
   const getDisplayRiskName = (riskLevel) => {
     if (riskLevel === "High") return "Critical";
@@ -183,11 +152,146 @@ useEffect(() => {
     }));
   }, [reportData, reportType, selectedItem]);
 
+  const usageHistoryEntries = useMemo(() => {
+    const source = reportData?.usageEntries ?? [];
+    if (selectedItem === "All Items") return source;
+    return source.filter((entry) => entry.itemName === selectedItem);
+  }, [reportData, selectedItem]);
+
+  const totalFilteredConsumption = useMemo(
+    () => usageHistoryEntries.reduce((sum, entry) => sum + (Number(entry.quantityUsed) || 0), 0),
+    [usageHistoryEntries]
+  );
+
+  const summaryCards = useMemo(() => {
+    if (!reportData) return [];
+
+    if (reportType === "usage-history") {
+      return [
+        { label: "Total Units Used", value: reportData.totalUnitsUsed ?? 0 },
+        { label: "Total Items", value: reportData.totalItems ?? 0 },
+        { label: "Stock Remaining", value: reportData.totalStockRemaining ?? 0 },
+        { label: "At Risk", value: riskCounts.atRisk },
+        { label: "Critical", value: riskCounts.critical }
+      ];
+    }
+
+    if (reportType === "risk-analysis") {
+      return [
+        { label: "Critical", value: riskCounts.critical },
+        { label: "At Risk", value: riskCounts.atRisk },
+        { label: "Safe", value: riskCounts.safe },
+        { label: "Total Items", value: reportData.totalItems ?? 0 },
+        { label: "Stock Remaining", value: reportData.totalStockRemaining ?? 0 }
+      ];
+    }
+
+    return [
+      { label: "Total Items", value: reportData.totalItems ?? 0 },
+      { label: "Stock Remaining", value: reportData.totalStockRemaining ?? 0 },
+      { label: "Safe", value: riskCounts.safe },
+      { label: "At Risk", value: riskCounts.atRisk },
+      { label: "Critical", value: riskCounts.critical }
+    ];
+  }, [reportData, reportType, riskCounts]);
+
+  const applyDateRange = () => {
+    const today = getTodayYmd();
+    if (dateFrom && dateFrom > today) {
+      setDateToast({ visible: true, message: "Start date cannot be in the future.", type: "error" });
+      return;
+    }
+    if (dateTo && dateTo > today) {
+      setDateToast({ visible: true, message: "End date cannot be in the future.", type: "error" });
+      return;
+    }
+    if (dateFrom && dateTo && dateFrom > dateTo) {
+      setDateToast({ visible: true, message: "Start date must be before end date.", type: "error" });
+      return;
+    }
+    const startLabel = dateFrom || "the beginning";
+    const endLabel = dateTo || "today";
+    setDateToast({
+      visible: true,
+      message: `Showing results from ${startLabel} to ${endLabel}.`,
+      type: "success"
+    });
+    fetchReportData(reportType, dateFrom, dateTo);
+  };
+
+  const handleReportTypeChange = (nextType) => {
+    setReportType(nextType);
+    fetchReportData(nextType, dateFrom, dateTo);
+  };
+
+  const handleDateFromChange = (value) => {
+    const today = getTodayYmd();
+    if (value && value > today) {
+      setDateToast({ visible: true, message: "Start date cannot be in the future.", type: "error" });
+      return;
+    }
+    setDateFrom(value);
+  };
+
+  const handleDateToChange = (value) => {
+    const today = getTodayYmd();
+    if (value && value > today) {
+      setDateToast({ visible: true, message: "End date cannot be in the future.", type: "error" });
+      return;
+    }
+    setDateTo(value);
+  };
+
+  useEffect(() => {
+    if (!dateToast.visible) return undefined;
+    const timer = setTimeout(() => {
+      setDateToast((prev) => ({ ...prev, visible: false }));
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [dateToast.visible, dateToast.message, dateToast.type]);
+
+  useEffect(() => {
+    if (!exportToast.visible) return undefined;
+    const timer = setTimeout(() => {
+      setExportToast((prev) => ({ ...prev, visible: false }));
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [exportToast.visible, exportToast.message, exportToast.type]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      applyDateRange();
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [dateFrom, dateTo]);
+
+  const trendTableRows = useMemo(() => {
+    const items = reportData?.itemDetails ?? [];
+    const riskLabel = (risk) =>
+      risk === "High" ? "High" : risk === "Medium" ? "Medium" : "Low";
+    return items.map((item) => ({
+      id: item._id,
+      itemName: item.itemName,
+      stock: item.currentStock ?? 0,
+      threshold: item.reorderThreshold ?? 0,
+      used: item.totalUsed ?? 0,
+      risk: riskLabel(item.riskLevel)
+    }));
+  }, [reportData]);
+
   const handleExportCSV = () => {
-    if (!exportRows.length) return;
+    if (!exportRows.length) {
+      setExportToast({
+        visible: true,
+        message: "No data to export for the selected report and filters.",
+        type: "error"
+      });
+      return;
+    }
 
     try {
       setIsExportingCSV(true);
+      setExportToast({ visible: false, message: "", type: "success" });
 
       const headers = reportType === "usage-history"
         ? ["Item Name", "Total Used"]
@@ -232,7 +336,13 @@ useEffect(() => {
         ];
       });
 
+      const summaryRows = summaryCards.map((card) => [card.label, card.value]);
+
       const csvContent = [
+        "Report Summary",
+        ["Metric", "Value"].join(","),
+        ...summaryRows.map((row) => row.map(escapeCSVValue).join(",")),
+        "",
         headers.join(","),
         ...csvRows.map((row) => row.map(escapeCSVValue).join(","))
       ].join("\n");
@@ -258,19 +368,35 @@ useEffect(() => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (exportError) {
-      console.error("CSV export failed:", exportError);
-      alert("CSV export failed. Please try again.");
+      setExportToast({
+        visible: true,
+        message: `CSV exported with ${exportRows.length} row(s).`,
+        type: "success"
+      });
+    } catch {
+      setExportToast({
+        visible: true,
+        message: "CSV export failed. Please try again.",
+        type: "error"
+      });
     } finally {
       setIsExportingCSV(false);
     }
   };
 
   const handleExportPDF = () => {
-    if (!exportRows.length) return;
+    if (!exportRows.length) {
+      setExportToast({
+        visible: true,
+        message: "No data to export for the selected report and filters.",
+        type: "error"
+      });
+      return;
+    }
 
     try {
       setIsExportingPDF(true);
+      setExportToast({ visible: false, message: "", type: "success" });
 
       const doc = new jsPDF();
       const reportId = `INV-${Date.now()}`;
@@ -279,9 +405,6 @@ useEffect(() => {
       const safeReportTypeLabel = REPORT_TYPE_LABELS[reportType] || "Inventory Report";
 
       const summarySource = exportRows;
-      const highRiskCount = summarySource.filter((item) => item.riskLevel === "High").length;
-      const mediumRiskCount = summarySource.filter((item) => item.riskLevel === "Medium").length;
-      const lowRiskCount = summarySource.filter((item) => item.riskLevel === "Low").length;
 
       doc.setFontSize(20);
       doc.text("StockGuard Inc.", 14, 18);
@@ -297,20 +420,16 @@ useEffect(() => {
       doc.text(`Total Items: ${summarySource.length}`, 14, 66);
       doc.text("Status: Active", 14, 73);
 
-      if (reportType === "usage-history") {
-        const totalUsed = summarySource.reduce((sum, row) => sum + (Number(row.totalUsed) || 0), 0);
-        doc.autoTable({
-          startY: 82,
-          head: [["Summary", "Value"]],
-          body: [
-            ["Items Included", summarySource.length],
-            ["Total Units Used", totalUsed]
-          ],
-          theme: "grid",
-          headStyles: { fillColor: [37, 99, 235] },
-          styles: { fontSize: 10 }
-        });
+      doc.autoTable({
+        startY: 82,
+        head: [["Summary", "Value"]],
+        body: summaryCards.map((card) => [card.label, card.value]),
+        theme: "grid",
+        headStyles: { fillColor: [37, 99, 235] },
+        styles: { fontSize: 10 }
+      });
 
+      if (reportType === "usage-history") {
         const rows = summarySource.map((item) => [item.itemName, item.totalUsed]);
         doc.autoTable({
           startY: doc.lastAutoTable.finalY + 10,
@@ -321,19 +440,6 @@ useEffect(() => {
           styles: { fontSize: 10 }
         });
       } else if (reportType === "risk-analysis") {
-        doc.autoTable({
-          startY: 82,
-          head: [["Summary", "Count"]],
-          body: [
-            ["Critical Items", highRiskCount],
-            ["At Risk Items", mediumRiskCount],
-            ["Safe Items", lowRiskCount]
-          ],
-          theme: "grid",
-          headStyles: { fillColor: [37, 99, 235] },
-          styles: { fontSize: 10 }
-        });
-
         const rows = summarySource.map((item) => [
           item.itemName,
           getDisplayRiskName(item.riskLevel),
@@ -349,19 +455,6 @@ useEffect(() => {
           styles: { fontSize: 10 }
         });
       } else {
-        doc.autoTable({
-          startY: 82,
-          head: [["Summary", "Count"]],
-          body: [
-            ["Critical Items", highRiskCount],
-            ["At Risk Items", mediumRiskCount],
-            ["Safe Items", lowRiskCount]
-          ],
-          theme: "grid",
-          headStyles: { fillColor: [37, 99, 235] },
-          styles: { fontSize: 10 }
-        });
-
         const rows = summarySource.map((item) => [
           item.itemName,
           item.currentStock,
@@ -391,9 +484,17 @@ useEffect(() => {
           : selectedItem.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
 
       doc.save(`stockguard-${safeReportTypeFile}-${safeItemName}-${today}.pdf`);
-    } catch (pdfError) {
-      console.error("PDF export failed:", pdfError);
-      alert("PDF export failed. Please try again.");
+      setExportToast({
+        visible: true,
+        message: `PDF exported with ${exportRows.length} row(s).`,
+        type: "success"
+      });
+    } catch {
+      setExportToast({
+        visible: true,
+        message: "PDF export failed. Please try again.",
+        type: "error"
+      });
     } finally {
       setIsExportingPDF(false);
     }
@@ -406,9 +507,7 @@ useEffect(() => {
   if (error) {
     return <div className="report-message error">{error}</div>;
   }
-if (!reportData) {
-  return <div className="report-message">Loading data...</div>;
-}
+
   return (
     <div className="report-dashboard">
       <div className="report-heading-row report-heading-row-enhanced">
@@ -440,6 +539,44 @@ if (!reportData) {
           </button>
         </div>
       </div>
+      {exportToast.visible && (
+        <div
+          style={{
+            position: "fixed",
+            top: "18px",
+            right: "18px",
+            zIndex: 1001,
+            width: "min(460px, calc(100vw - 32px))"
+          }}
+        >
+          <ConfirmationBanner
+            message={exportToast.message}
+            type={exportToast.type}
+            onClose={() => setExportToast((prev) => ({ ...prev, visible: false }))}
+            autoCloseDuration={2000}
+          />
+        </div>
+      )}
+      {dateToast.visible && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            top: "18px",
+            right: "18px",
+            zIndex: 1000,
+            padding: "10px 14px",
+            borderRadius: "10px",
+            color: "#fff",
+            fontWeight: 600,
+            boxShadow: "0 10px 20px rgba(15, 23, 42, 0.18)",
+            background: dateToast.type === "error" ? "#dc2626" : "#16a34a"
+          }}
+        >
+          {dateToast.message}
+        </div>
+      )}
 
       <div className="report-cards">
         {reportType === "stock-levels" && (
@@ -541,7 +678,7 @@ if (!reportData) {
 
           <select
             value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
+            onChange={(e) => handleReportTypeChange(e.target.value)}
             className="report-filter-select"
             aria-label="Report type"
           >
@@ -571,6 +708,29 @@ if (!reportData) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="report-filter-card report-filter-card--stacked">
+          <div className="report-filter-copy">
+            <p className="filter-title">Date Range</p>
+            <p className="filter-subtitle">Use a range and results refresh automatically.</p>
+          </div>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => handleDateFromChange(e.target.value)}
+            className="report-filter-select"
+            aria-label="Start date"
+            max={getTodayYmd()}
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => handleDateToChange(e.target.value)}
+            className="report-filter-select"
+            aria-label="End date"
+            max={getTodayYmd()}
+          />
         </div>
       </div>
 
@@ -613,7 +773,6 @@ if (!reportData) {
 
       <div className="report-chart-grid premium-report-grid">
         {reportType === "stock-levels" && selectedItemDetails && (
-          
           <div className="chart-card premium-chart-card">
             <div className="chart-header">
               <div>
@@ -622,20 +781,20 @@ if (!reportData) {
               </div>
             </div>
 
-<div className="stock-health-card">
-  <div className="stock-health-top">
-    <div className="stock-health-stat">
-      <span>Current Stock</span>
-      <strong>{selectedItemDetails.currentStock}</strong>
-    </div>
+            <div className="stock-health-card">
+              <div className="stock-health-top">
+                <div className="stock-health-stat">
+                  <span>Current Stock</span>
+                  <strong>{selectedItemDetails.currentStock}</strong>
+                </div>
 
-    <div className="stock-health-stat">
-      <span>Threshold</span>
-      <strong>{selectedItemDetails.reorderThreshold}</strong>
-    </div>
-  </div>
+                <div className="stock-health-stat">
+                  <span>Threshold</span>
+                  <strong>{selectedItemDetails.reorderThreshold}</strong>
+                </div>
+              </div>
 
-  <div className="stock-health-bar-area">
+              <div className="stock-health-bar-area">
                 <div className="stock-health-bar-labels">
                   <span>Stock Level</span>
                   <span>{Math.round(stockHealthWidth)}%</span>
@@ -890,48 +1049,90 @@ if (!reportData) {
             </div>
           </div>
         )}
+
+        {reportType === "usage-history" && (
+          <div className="chart-card premium-chart-card">
+            <div className="chart-header">
+              <div>
+                <h3>Usage Entries</h3>
+                <p>Includes item name, quantity used, usage date, and total consumption.</p>
+              </div>
+            </div>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item Name</th>
+                    <th>Quantity Used</th>
+                    <th>Usage Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usageHistoryEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan="3">No usage entries found for this filter/date range.</td>
+                    </tr>
+                  ) : (
+                    usageHistoryEntries.map((entry) => (
+                      <tr key={entry._id}>
+                        <td>{entry.itemName}</td>
+                        <td>{entry.quantityUsed}</td>
+                        <td>{entry.usageDate}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p className="filter-subtitle">Total consumption: {totalFilteredConsumption}</p>
+          </div>
+        )}
       </div>
-      {/* ✅ Trend Data Table */}
-<div className="report-table-section">
-  <h3>Trend Data Table</h3>
 
-  <div className="table-responsive">
-    <table className="report-table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Stock</th>
-          <th>Threshold</th>
-          <th>Used</th>
-          <th>Risk</th>
-        </tr>
-      </thead>
-
-      <tbody>
-  {exportRows?.length > 0 ? (
-    exportRows.map((item, index) => (
-      <tr key={index}>
-        <td>{item.itemName}</td>
-        <td>{item.currentStock}</td>
-        <td>{item.reorderThreshold}</td>
-        <td>{item.totalUsed}</td>
-        <td className={`risk-${item.riskLevel.toLowerCase()}`}>
-          {item.riskLevel}
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="5">No data available</td>
-    </tr>
-  )}
-</tbody>
-    </table>
-  </div>
-</div>
+      {(reportType === "stock-levels" || reportType === "risk-analysis") && (
+        <div className="chart-card premium-chart-card">
+          <div className="chart-header">
+            <div>
+              <h3>Trend Data Table</h3>
+              <p>Snapshot of item stock, threshold, usage, and risk level.</p>
+            </div>
+          </div>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Stock</th>
+                  <th>Threshold</th>
+                  <th>Used</th>
+                  <th>Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trendTableRows.length === 0 ? (
+                  <tr>
+                    <td colSpan="5">No trend data available.</td>
+                  </tr>
+                ) : (
+                  trendTableRows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.itemName}</td>
+                      <td>{row.stock}</td>
+                      <td>{row.threshold}</td>
+                      <td>{row.used}</td>
+                      <td>
+                        <span className={getRiskBadgeClass(row.risk)}>{row.risk}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
- 
 
 export default ReportDashboard;

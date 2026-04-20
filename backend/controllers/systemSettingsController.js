@@ -1,4 +1,5 @@
 const SystemSettings = require("../models/SystemSettings");
+const { refreshAllInventoryRiskLevels } = require("../utils/inventoryRisk");
 
 // GET settings
 const getSystemSettings = async (req, res) => {
@@ -119,6 +120,10 @@ const updateSystemSettings = async (req, res) => {
     }
 
     const updated = await settings.save();
+
+    if (riskSettings !== undefined) {
+      await refreshAllInventoryRiskLevels();
+    }
 
     res.json({
       message: "System settings updated successfully",
