@@ -1,0 +1,24 @@
+@startuml sequence-log-usage
+title Sequence - POST /api/inventory/usage
+autonumber
+actor "Staff user" as U
+participant "Browser\n(React)" as C
+participant "Express\nserver.js" as S
+participant "inventoryRoutes" as R
+database "MongoDB" as M
+
+U -> C : Enter usage + Submit
+C -> S : HTTP POST /api/inventory/usage\nJSON body
+S -> R : requireDatabaseConnection, route handler
+R -> M : find Inventory by itemId
+M --> R : item
+R -> R : Validate qty, date, future check
+R -> M : update Inventory (stock, totalUsed, risk, rate)
+M --> R : savedItem
+R -> M : insert UsageLog
+M --> R : savedLog
+R --> S : 200 { message, item, log }
+S --> C : JSON
+C --> U : Success banner + refresh lists
+
+@enduml

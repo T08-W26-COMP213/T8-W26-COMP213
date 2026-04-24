@@ -1,0 +1,64 @@
+@startuml use-case-diagram
+' Figure 1 of 2. Figure 2: use-case-diagram-part2.puml
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam titleFontSize 15
+skinparam titleFontStyle bold
+skinparam ArrowColor #2E5A88
+skinparam usecaseBackgroundColor #E8F0FE
+skinparam usecaseBorderColor #2E5A88
+skinparam usecaseFontColor #102040
+skinparam usecaseFontSize 11
+skinparam actorFontSize 12
+skinparam actorFontStyle bold
+skinparam noteBackgroundColor #FFF9E3
+skinparam noteBorderColor #C9A227
+skinparam noteFontSize 10
+skinparam nodesep 55
+skinparam ranksep 50
+
+title Stock Guard - Use case diagram 1 of 2\nAccess, inventory, usage, and risk
+left to right direction
+
+actor "Operational\nStaff" as OS
+actor "System\nAdministrator" as ADM
+actor "Strategic (Business\nOwner and Stock\nAnalyst)" as ST
+
+package "Operations" {
+  usecase "Authenticate" as p1A
+  usecase "View dashboard" as p1B
+  usecase "Manage inventory" as p1C
+  usecase "Log inventory usage" as p1D
+  usecase "View risk alerts" as p1E
+}
+
+OS  --> p1A
+OS  --> p1B
+OS  --> p1C
+OS  --> p1D
+OS  --> p1E
+
+ADM --> p1A
+ADM --> p1B
+ADM --> p1C
+ADM --> p1D
+ADM --> p1E
+
+ST  --> p1A
+ST  --> p1B
+ST  --> p1C
+ST  --> p1E
+
+note right of p1D
+  TAC story 1. ``POST /api/inventory/usage`` -
+  update **Inventory**, insert **UsageLog**
+end note
+
+note bottom of p1A
+  **Strategic** roles: no *Log usage* in
+  app. **Diagram 2 of 2:** use-case-diagram-part2 (PNG in same folder)
+end note
+
+@enduml

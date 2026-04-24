@@ -1,0 +1,44 @@
+@startuml component-diagram
+title Stock Guard - Component Diagram (Release 1.0)
+skinparam componentStyle rectangle
+
+package "Client tier" {
+  [React SPA (Vite)] as Web
+  note right of Web
+    Login, Sidebar, role pages,
+    inventory/usage modals, reports,
+    settings, export (CSV/PDF where implemented).
+  end note
+}
+
+package "Server tier" {
+  [Express HTTP API] as Api
+  [Route modules] as Routes
+  note right of Routes
+    /api/inventory, /api/users,
+    /api/reports, /api/system-settings,
+    /api/auth, /api/health, /api/logs
+  end note
+}
+
+package "Data tier" {
+  database "MongoDB" as DB
+}
+note right of DB
+  Collections: users, inventories,
+  usagelogs, systemsettings
+  (Mongoose model names: User, etc.)
+end note
+
+[In-memory system log\n(server.js)] as Mem
+note right of Mem
+  GET /api/logs; optional filter;
+  not persisted in MongoDB.
+end note
+
+Web -down-> Api : JSON over HTTP\n(REST, CORS)
+Api -right-> Routes
+Routes -down-> DB : Mongoose ODM
+Api ..> Mem : append / read\nsystem events
+
+@enduml

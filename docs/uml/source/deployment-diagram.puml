@@ -1,0 +1,37 @@
+@startuml deployment-diagram
+title Stock Guard - Deployment (typical local or small team host)
+skinparam node {
+  backgroundColor #F5F5F5
+  borderColor #333333
+}
+
+node "User workstation" as pc {
+  artifact "Web browser" as browser
+}
+
+node "Host machine (dev or small server)" as host {
+  artifact "Vite build or\ndev server (optional)" as vite
+  artifact "Node.js\nExpress (port 5000 default)" as node
+  artifact "MERN API process\n(server.js)" as proc
+  vite .. node : "React static assets\ncan be served separately or via proxy"
+  node .. proc
+}
+
+node "Data host" as data {
+  database "MongoDB" as mongo <<MongoDB 4.x+>> {
+  }
+}
+
+cloud "local network or localhost" as net
+
+browser - net : HTTPS or HTTP
+net - node : e.g. http://localhost:5000\n+ Vite dev (5173) in development
+node - mongo : MONGO_URI\n(e.g. mongodb://localhost:27017/inventorydb)
+
+note right of mongo
+  Collections map to ERD:
+  users, inventories, usagelogs,
+  systemsettings.
+end note
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml use-case-diagram-part2
+' Figure 2 of 2. Part 1: use-case-diagram.puml
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam titleFontSize 15
+skinparam titleFontStyle bold
+skinparam ArrowColor #2E5A88
+skinparam usecaseBackgroundColor #E8F0FE
+skinparam usecaseBorderColor #2E5A88
+skinparam usecaseFontColor #102040
+skinparam usecaseFontSize 11
+skinparam actorFontSize 12
+skinparam actorFontStyle bold
+skinparam noteBackgroundColor #FFF9E3
+skinparam noteBorderColor #C9A227
+skinparam noteFontSize 10
+skinparam nodesep 60
+skinparam ranksep 55
+
+title Stock Guard - Use case diagram 2 of 2\nAnalytics, export, and system administration
+left to right direction
+
+actor "System\nAdministrator" as ADM
+actor "Strategic (Business\nOwner and Stock\nAnalyst)" as ST
+
+package "Analytics and administration" {
+  usecase "View consumption\ntrends" as uA
+  usecase "View reports and\nanalytics" as uB
+  usecase "Export CSV / PDF" as uC
+  usecase "Manage user\naccounts" as uD
+  usecase "Configure system\nsettings" as uE
+  usecase "Monitor health and\nserver logs" as uF
+}
+
+' Operational Staff does not access analytics/admin use cases in Part 2
+' (Log usage and risk alerts are in Part 1)
+
+ADM --> uB
+ADM --> uC
+ADM --> uD
+ADM --> uE
+ADM --> uF
+
+ST  --> uA
+ST  --> uB
+ST  --> uC
+ST  --> uF
+
+note right of uA
+  Only on **Strategic** role
+  menu; not on System
+  Administrator menu
+  (``Sidebar``).
+end note
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml package-diagram
+title Stock Guard - Package / module structure
+skinparam packageStyle rectangle
+left to right direction
+
+package "frontend" {
+  [App, Login, Sidebar] as feui
+  [Layouts: inventory, usage, risk, trends, reports, users, settings, monitoring] as felayouts
+  feui .. felayouts
+}
+
+package "backend" {
+  [server.js] as srv
+  package "routes" {
+    [authRoutes] as a
+    [inventoryRoutes] as i
+    [userRoutes] as u
+    [reportRoutes] as r
+    [systemSettingsRoutes] as s
+  }
+  package "models" {
+    [User] as mU
+    [Inventory] as mI
+    [UsageLog] as mL
+    [SystemSettings] as mS
+  }
+  package "controllers" {
+    [reportController] as cR
+    [systemSettingsController] as cS
+  }
+  [utils / inventoryRisk] as util
+  note right of srv
+    Listens; mounts
+    all route modules
+  end note
+  a ..> mU
+  i .. mI
+  i .. mL
+  i .. util
+  u .. mU
+  s .. mS
+  r .. cR
+  s .. cS
+}
+
+note bottom of felayouts
+  fetch( /api/... ) over HTTP
+  from Vite dev or built static files
+end note
+
+note right of util
+  calculateRiskLevel,
+  refreshAllInventoryRiskLevels
+end note
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml ui-low-fidelity
+title Stock Guard - Low-fidelity layout (Salt wireframe, TAC Appendix A)
+salt
+{
+  Login screen
+  Email    | "_____________________"
+  Password | "_____________________"
+  [      Sign in      ]
+  .
+  Main shell: sidebar (role-based) + main content (dashboard, tables)
+  .
+  Log Usage: confirmation area, Submit Usage button, modal with item / qty / date, usage log grid, Export CSV PDF
+  .
+  Owner and Analyst: nav per TR (no Log Usage, no User Management)
+  Admin: User Management and System Settings plus operational pages
+}
+@enduml

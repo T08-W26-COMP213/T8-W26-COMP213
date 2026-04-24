@@ -1,0 +1,86 @@
+@startuml erd
+' Class-style ERD (works with older PlantUML; erDiagram needs a recent JAR).
+title StockGuard - Entity-Relationship Diagram (MongoDB, Release 1.0)
+skinparam roundcorner 8
+skinparam classAttributeIconSize 0
+skinparam class {
+  BorderColor #333333
+  BackgroundColor #F8F8F8
+}
+left to right direction
+
+' No separate Report entity (reports are computed / export only).
+
+class User as "USER" <<entity>> {
+  _id: ObjectId <<PK>>
+  --
+  username: string
+  email: string <<unique>>
+  password: string
+  hasPassword: boolean
+  role: string
+  status: string
+  createdAt: date
+  updatedAt: date
+}
+
+class Inventory as "INVENTORY" <<entity>> {
+  _id: ObjectId <<PK>>
+  --
+  itemName: string
+  currentStock: int
+  reorderThreshold: int
+  totalUsed: int
+  consumptionRate: number
+  riskLevel: string
+  createdAt: date
+  updatedAt: date
+}
+
+class UsageLog as "USAGE_LOG" <<entity>> {
+  _id: ObjectId <<PK>>
+  itemId: ObjectId <<FK>>
+  itemName: string
+  quantityUsed: int
+  usageDate: string
+  remainingStock: int
+  riskLevel: string
+  createdAt: date
+  updatedAt: date
+}
+
+class SystemSettings as "SYSTEM_SETTINGS" <<entity>> {
+  _id: ObjectId <<PK>>
+  --
+  systemName: string
+  organizationName: string
+  timezone: string
+  language: string
+  lowStockThreshold: int
+  criticalStockThreshold: int
+  riskSettings_highRiskPercentage: int
+  riskSettings_mediumRiskPercentage: int
+  autoRiskCalculation: boolean
+  emailAlerts: boolean
+  lowStockAlerts: boolean
+  criticalAlerts: boolean
+  sessionTimeout: int
+  roleBasedAccess: boolean
+  auditLogging: boolean
+  darkMode: boolean
+  refreshInterval: int
+  createdAt: date
+  updatedAt: date
+}
+
+Inventory "1" *-- "0..*" UsageLog : itemId
+note right of User
+  No FK in DB to other
+  collections (auth only).
+end note
+note right of SystemSettings
+  Typically one document
+  (app-wide configuration).
+end note
+
+@enduml

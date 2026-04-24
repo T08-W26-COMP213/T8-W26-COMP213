@@ -1,0 +1,72 @@
+@startuml class-diagram
+title Stock Guard - Core Domain and Server Classes (Release 1.0)
+skinparam classAttributeIconSize 0
+left to right direction
+
+' Mongoose models - backend/models
+class "User" as User <<entity>> {
+  username : String
+  email : String
+  password : String
+  hasPassword : Boolean
+  role : String
+  status : String
+  comparePassword() : Promise
+}
+
+class "Inventory" as Inv <<entity>> {
+  itemName : String
+  currentStock : Number
+  reorderThreshold : Number
+  totalUsed : Number
+  consumptionRate : Number
+  riskLevel : String
+}
+
+class "UsageLog" as Log <<entity>> {
+  itemId : ObjectId
+  itemName : String
+  quantityUsed : Number
+  usageDate : String
+  remainingStock : Number
+  riskLevel : String
+}
+
+class "SystemSettings" as Sys <<entity>> {
+  systemName : String
+  organizationName : String
+  timezone : String
+  lowStockThreshold : Number
+  criticalStockThreshold : Number
+  riskSettings : Object
+  darkMode : Boolean
+  refreshInterval : Number
+}
+
+class "InventoryRisk" as Risk <<utility>> {
+  {static} calculateRiskLevel(stock, threshold) : String
+  {static} refreshAllInventoryRiskLevels() : void
+  ' backend/utils/inventoryRisk.js
+}
+
+Inv "1" o-- "0..*" Log : itemId
+User ..> Inv : (no direct FK;\nauth identifies user)
+Sys ..> Inv : (thresholds inform\nalerts; no FK)
+
+class "Route handlers\n(Express)" as RH <<boundary>> {
+  ' inventoryRoutes, authRoutes, userRoutes, etc.
+}
+RH ..> Inv : read / write
+RH ..> Log : read / write
+RH ..> Risk
+RH ..> Sys
+RH ..> User
+
+note bottom of Risk
+  Used when saving inventory
+  and on usage to refresh
+  risk level (Low, Medium, High
+  in DB; UI may label differently).
+end note
+
+@enduml

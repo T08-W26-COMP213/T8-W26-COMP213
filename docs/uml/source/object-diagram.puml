@@ -1,0 +1,51 @@
+@startuml object-diagram
+title Stock Guard - Object Diagram (illustrative snapshot after one usage log)
+skinparam objectAttributeIconSize 0
+
+object "<u>currentUser</u> : User" as u {
+  email = "ops@example.com"
+  role = "Operational Staff"
+  status = "Active"
+}
+
+object "<u>gloves</u> : Inventory" as i {
+  itemName = "Nitrile Gloves"
+  currentStock = 18
+  reorderThreshold = 8
+  totalUsed = 24
+  riskLevel = "Low"
+}
+
+object "<u>log_2026_01_20</u> : UsageLog" as l {
+  itemId = "ObjectId( ... gloves._id )"
+  itemName = "Nitrile Gloves"
+  quantityUsed = 2
+  usageDate = "2026-01-20"
+  remainingStock = 18
+  riskLevel = "Low"
+}
+
+l -down-> i : itemId
+
+object "<u>appSettings</u> : SystemSettings" as s {
+  systemName = "StockGuard System"
+  lowStockThreshold = 10
+  darkMode = false
+}
+
+note right of l
+  itemId in MongoDB stores the
+  same ObjectId as gloves._id.
+  usageDate is a YYYY-MM-DD string.
+end note
+note bottom of s
+  Typically one document;
+  not linked by FK to User/Inventory.
+end note
+note right of u
+  Session holds identity;
+  not a DB FK in other collections
+  in Release 1.0.
+end note
+
+@enduml
